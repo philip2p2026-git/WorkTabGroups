@@ -249,6 +249,14 @@ namespace WorkTabGroups
             {
                 group.assignedWorkGiverDefNames.Remove(workGiver.defName);
                 workGiverToGroup.Remove(workGiver);
+
+                PawnColumnDef col = GetWorkGiverColumn(workGiver);
+                if (col?.Worker is PawnColumnWorker_WorkGiver wgWorker)
+                {
+                    wgWorker.ColumnWorkerWorkType = null;
+                    wgWorker.InvalidateCache();
+                }
+
                 if (group.assignedWorkGiverDefNames.Count == 0)
                 {
                     group.expanded = false;

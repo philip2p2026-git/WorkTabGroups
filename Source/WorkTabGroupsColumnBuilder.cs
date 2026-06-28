@@ -50,7 +50,7 @@ namespace WorkTabGroups
                 }
             }
 
-            List<PawnColumnDef> newColumns = columns.Where(c => !reassignedColumns.Contains(c)).ToList();
+            List<PawnColumnDef> newColumns = BuildNativeColumnLayout(columns, manager, reassignedColumns);
 
             List<MajorWorkGroupData> orderedGroups = manager.GetOrderedGroupsForInjection();
             foreach (MajorWorkGroupData group in orderedGroups)
@@ -206,6 +206,42 @@ namespace WorkTabGroups
                     workTypeWorker.Expanded = expanded;
                 }
             }
+        }
+
+        private static List<PawnColumnDef> BuildNativeColumnLayout(
+            List<PawnColumnDef> columns,
+            WorkTabGroupsManager manager,
+            HashSet<PawnColumnDef> reassignedColumns)
+        {
+            var result = new List<PawnColumnDef>();
+            if (columns == null)
+            {
+                return result;
+            }
+
+            foreach (PawnColumnDef col in columns)
+            {
+                if (col.Worker is PawnColumnWorker_WorkGiver || col.Worker is PawnColumnWorker_MajorWorkGroup)
+                {
+                    continue;
+                }
+
+                result.Add(col);
+
+                if (col.Worker is PawnColumnWorker_WorkType && col.workType != null)
+                {
+                    foreach (WorkGiverDef wg in col.workType.workGiversByPriority)
+                    {
+                        PawnColumnDef wgCol = manager.GetWorkGiverColumn(wg);
+                        if (wgCol != null && !reassignedColumns.Contains(wgCol))
+                        {
+                            result.Add(wgCol);
+                        }
+                    }
+                }
+            }
+
+            return result;
         }
 
         private static int ResolveInsertIndex(List<PawnColumnDef> columns, string anchor)
