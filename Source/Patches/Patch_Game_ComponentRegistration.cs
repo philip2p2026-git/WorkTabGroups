@@ -7,7 +7,6 @@ using Verse;
 namespace WorkTabGroups.Patches
 {
     [HarmonyPatch(typeof(Game))]
-    [HarmonyPatch(MethodType.Constructor)]
     public static class Patch_Game_Constructor
     {
         public static IEnumerable<MethodBase> TargetMethods()
