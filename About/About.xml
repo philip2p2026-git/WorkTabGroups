@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+	<name>Work Tab Groups</name>
+	<author>philip2p2026</author>
+	<packageId>philip2p2026.worktabgroups</packageId>
+	<description>Create custom collapsible work groups in the Work Tab. Reassign WorkGiver columns into your own groups, save layouts as global presets, and optionally auto-apply a default layout on new colonies. Requires Work Tab.</description>
+	<supportedVersions>
+		<li>1.5</li>
+		<li>1.6</li>
+	</supportedVersions>
+	<modDependencies>
+		<li>
+			<packageId>brrainz.harmony</packageId>
+			<displayName>Harmony</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+		</li>
+		<li>
+			<packageId>Fluffy.WorkTab</packageId>
+			<displayName>Work Tab</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/3453549086</steamWorkshopUrl>
+		</li>
+	</modDependencies>
+	<loadAfter>
+		<li>brrainz.harmony</li>
+		<li>Fluffy.WorkTab</li>
+	</loadAfter>
+</ModMetaData>
