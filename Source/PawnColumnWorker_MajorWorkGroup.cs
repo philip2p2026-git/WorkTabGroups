@@ -286,6 +286,8 @@ namespace WorkTabGroups
                 WorkTabGroupsColumnBuilder.InvalidateWorkTabColumnCaches();
                 MainTabWindow_WorkTab.SetCurrentWorkTabDirty();
             }
+
+            HeaderInteractions(headerRect, table, clicked: true);
         }
 
         protected override void HeaderInteractions(Rect headerRect, PawnTable table, bool clicked = false)

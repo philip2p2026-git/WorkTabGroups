@@ -37,6 +37,15 @@ namespace WorkTabGroups
                 foreach (MajorWorkGroupData group in manager.Groups.ToList())
                 {
                     listing.Label(group.label + " (" + group.assignedWorkGiverDefNames.Count + " WorkTabGroups.WorkGivers".Translate() + ")");
+                    string defName = group.defName;
+                    string label = group.label;
+                    if (listing.ButtonText("WorkTabGroups.Delete".Translate() + ": " + label))
+                    {
+                        Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                            "WorkTabGroups.ConfirmDeleteGroup".Translate(label),
+                            () => WorkTabGroupsManager.Instance?.DeleteGroup(defName)));
+                    }
+
                     listing.Gap(2f);
                 }
             }
