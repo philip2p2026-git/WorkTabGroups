@@ -273,6 +273,7 @@ namespace WorkTabGroups
         {
             if (HeaderExpand())
             {
+                WorkTabGroupsColumnBuilder.InvalidateWorkTabColumnCaches();
                 MainTabWindow_WorkTab.SetCurrentWorkTabDirty();
             }
         }

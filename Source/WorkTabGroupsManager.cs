@@ -72,6 +72,7 @@ namespace WorkTabGroups
             {
                 SyncNextGroupId();
                 RebuildRuntimeState();
+                LongEventHandler.ExecuteWhenFinished(RequestColumnRebuild);
             }
         }
 
@@ -114,6 +115,14 @@ namespace WorkTabGroups
         public bool IsAssignedToCustomGroup(WorkGiverDef workGiver)
         {
             return workGiver != null && workGiverToGroup.ContainsKey(workGiver);
+        }
+
+        public IEnumerable<KeyValuePair<WorkGiverDef, MajorWorkGroupData>> GetAssignedWorkGiverAssignments()
+        {
+            foreach (KeyValuePair<WorkGiverDef, MajorWorkGroupData> assignment in workGiverToGroup)
+            {
+                yield return assignment;
+            }
         }
 
         public PawnColumnDef GetColumnDefForGroup(MajorWorkGroupData group)

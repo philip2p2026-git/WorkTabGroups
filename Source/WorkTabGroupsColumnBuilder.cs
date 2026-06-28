@@ -84,22 +84,13 @@ namespace WorkTabGroups
                     groupWorker.CanExpand = wgCols.Count > 0;
                     groupWorker.Expanded = group.expanded;
                     CollapseIfCannotExpand(groupWorker);
-
-                    foreach (PawnColumnDef wgCol in wgCols)
-                    {
-                        if (wgCol.Worker is PawnColumnWorker_WorkGiver wgWorker &&
-                            wgCol is PawnColumnDef_WorkGiver wgDef)
-                        {
-                            wgWorker.ColumnWorkerWorkType = null;
-                            WorkGiverGroupLinks.MajorGroupByWorkGiver[wgDef.workgiver] = groupWorker;
-                        }
-                    }
                 }
             }
 
+            WireGroupedWorkGiverLinks(manager);
             UpdateNativeWorkTypeExpandState(newColumns);
             RestoreNativeExpandState(newColumns, nativeExpandState);
-            WireNativeWorkTypeLinks(newColumns);
+            WireNativeWorkTypeLinks(newColumns, manager);
             InvalidateReassignedWorkGiverCaches();
             PawnTableDefOf.Work.columns = newColumns;
             MainTabWindow_WorkTab.SetCurrentWorkTabDirty();
@@ -114,30 +105,21 @@ namespace WorkTabGroups
             }
 
             WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
+            WorkGiverGroupLinks.Clear();
 
             for (int i = 0; i < columns.Count; i++)
             {
                 if (columns[i].Worker is PawnColumnWorker_MajorWorkGroup groupWorker)
                 {
-                    MajorWorkGroupData group = groupWorker.BoundGroup;
+                    MajorWorkGroupData group = ResolveGroupData(columns[i], groupWorker, manager);
+                    if (group != null)
+                    {
+                        groupWorker.BindGroup(group);
+                    }
+
                     int childCount = group?.assignedWorkGiverDefNames.Count ?? 0;
                     groupWorker.CanExpand = childCount > 0;
                     CollapseIfCannotExpand(groupWorker);
-
-                    if (group != null && manager != null)
-                    {
-                        foreach (string wgName in group.assignedWorkGiverDefNames)
-                        {
-                            WorkGiverDef wg = DefDatabase<WorkGiverDef>.GetNamedSilentFail(wgName);
-                            PawnColumnDef wgCol = wg != null ? manager.GetWorkGiverColumn(wg) : null;
-                            if (wgCol?.Worker is PawnColumnWorker_WorkGiver wgWorker &&
-                                wgCol is PawnColumnDef_WorkGiver wgDef)
-                            {
-                                wgWorker.ColumnWorkerWorkType = null;
-                                WorkGiverGroupLinks.MajorGroupByWorkGiver[wgDef.workgiver] = groupWorker;
-                            }
-                        }
-                    }
 
                     int j = i + 1;
                     while (j < columns.Count && columns[j].Worker is PawnColumnWorker_WorkGiver)
@@ -149,7 +131,73 @@ namespace WorkTabGroups
                 }
             }
 
+            WireGroupedWorkGiverLinks(manager);
             UpdateNativeWorkTypeExpandState(columns);
+        }
+
+        /// <summary>
+        /// Wire grouped WorkGivers to custom groups using manager assignments (authoritative).
+        /// Clears native WorkType parent links so collapse follows group Expanded state.
+        /// </summary>
+        public static void WireGroupedWorkGiverLinks(WorkTabGroupsManager manager, bool invalidateCaches = true)
+        {
+            if (manager == null)
+            {
+                return;
+            }
+
+            foreach (KeyValuePair<WorkGiverDef, MajorWorkGroupData> assignment in manager.GetAssignedWorkGiverAssignments())
+            {
+                WorkGiverDef workGiver = assignment.Key;
+                MajorWorkGroupData groupData = assignment.Value;
+                PawnColumnDef groupCol = manager.GetColumnDefForGroup(groupData);
+                PawnColumnDef wgCol = manager.GetWorkGiverColumn(workGiver);
+                if (groupCol?.Worker is PawnColumnWorker_MajorWorkGroup groupWorker &&
+                    wgCol?.Worker is PawnColumnWorker_WorkGiver wgWorker)
+                {
+                    wgWorker.ColumnWorkerWorkType = null;
+                    WorkGiverGroupLinks.MajorGroupByWorkGiver[workGiver] = groupWorker;
+                    if (invalidateCaches)
+                    {
+                        wgWorker.InvalidateCache();
+                    }
+                }
+            }
+        }
+
+        public static void InvalidateWorkTabColumnCaches()
+        {
+            List<PawnColumnDef> columns = PawnTableDefOf.Work.columns;
+            if (columns == null)
+            {
+                return;
+            }
+
+            foreach (PawnColumnDef col in columns)
+            {
+                if (col.Worker is AbstractPawnColumnWorker abstractWorker)
+                {
+                    abstractWorker.InvalidateCache();
+                }
+            }
+        }
+
+        private static MajorWorkGroupData ResolveGroupData(
+            PawnColumnDef column,
+            PawnColumnWorker_MajorWorkGroup groupWorker,
+            WorkTabGroupsManager manager)
+        {
+            if (column is PawnColumnDef_MajorWorkGroup majorCol && majorCol.majorWorkGroup?.data != null)
+            {
+                return majorCol.majorWorkGroup.data;
+            }
+
+            if (groupWorker.BoundGroup != null)
+            {
+                return groupWorker.BoundGroup;
+            }
+
+            return null;
         }
 
         private static void UpdateNativeWorkTypeExpandState(List<PawnColumnDef> columns)
@@ -332,7 +380,7 @@ namespace WorkTabGroups
             return j;
         }
 
-        private static void WireNativeWorkTypeLinks(List<PawnColumnDef> columns)
+        private static void WireNativeWorkTypeLinks(List<PawnColumnDef> columns, WorkTabGroupsManager manager)
         {
             for (int i = 0; i < columns.Count; i++)
             {
@@ -341,7 +389,9 @@ namespace WorkTabGroups
                     int j = i + 1;
                     while (j < columns.Count && columns[j].Worker is PawnColumnWorker_WorkGiver)
                     {
-                        if (columns[j].Worker is PawnColumnWorker_WorkGiver wgWorker)
+                        if (columns[j].Worker is PawnColumnWorker_WorkGiver wgWorker &&
+                            columns[j] is PawnColumnDef_WorkGiver wgDef &&
+                            (manager == null || !manager.IsAssignedToCustomGroup(wgDef.workgiver)))
                         {
                             wgWorker.ColumnWorkerWorkType = workTypeWorker;
                         }
