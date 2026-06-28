@@ -66,7 +66,7 @@ namespace WorkTabGroups
 
             if (Expanded)
             {
-                NeedCollapse = true;
+                Expanded = false;
             }
             else
             {
@@ -75,7 +75,7 @@ namespace WorkTabGroups
                     return false;
                 }
 
-                NeedExpand = true;
+                Expanded = true;
             }
 
             InvalidateCache();

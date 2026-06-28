@@ -113,29 +113,36 @@ namespace WorkTabGroups
                 return;
             }
 
+            WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
+
             for (int i = 0; i < columns.Count; i++)
             {
                 if (columns[i].Worker is PawnColumnWorker_MajorWorkGroup groupWorker)
                 {
-                    int j = i + 1;
-                    int childStart = j;
-                    while (j < columns.Count && columns[j].Worker is PawnColumnWorker_WorkGiver)
-                    {
-                        j++;
-                    }
-
-                    int childCount = j - childStart;
+                    MajorWorkGroupData group = groupWorker.BoundGroup;
+                    int childCount = group?.assignedWorkGiverDefNames.Count ?? 0;
                     groupWorker.CanExpand = childCount > 0;
                     CollapseIfCannotExpand(groupWorker);
 
-                    for (int k = childStart; k < j; k++)
+                    if (group != null && manager != null)
                     {
-                        if (columns[k].Worker is PawnColumnWorker_WorkGiver wgWorker &&
-                            columns[k] is PawnColumnDef_WorkGiver wgDef)
+                        foreach (string wgName in group.assignedWorkGiverDefNames)
                         {
-                            wgWorker.ColumnWorkerWorkType = null;
-                            WorkGiverGroupLinks.MajorGroupByWorkGiver[wgDef.workgiver] = groupWorker;
+                            WorkGiverDef wg = DefDatabase<WorkGiverDef>.GetNamedSilentFail(wgName);
+                            PawnColumnDef wgCol = wg != null ? manager.GetWorkGiverColumn(wg) : null;
+                            if (wgCol?.Worker is PawnColumnWorker_WorkGiver wgWorker &&
+                                wgCol is PawnColumnDef_WorkGiver wgDef)
+                            {
+                                wgWorker.ColumnWorkerWorkType = null;
+                                WorkGiverGroupLinks.MajorGroupByWorkGiver[wgDef.workgiver] = groupWorker;
+                            }
                         }
+                    }
+
+                    int j = i + 1;
+                    while (j < columns.Count && columns[j].Worker is PawnColumnWorker_WorkGiver)
+                    {
+                        j++;
                     }
 
                     i = j - 1;
