@@ -9,6 +9,15 @@ namespace WorkTabGroups
 {
     public static class WorkTabGroupsColumnBuilder
     {
+        /// <summary>
+        /// Reorder columns without a full Work Tab rebuild (preserves native expand state).
+        /// </summary>
+        public static void RelayoutColumns()
+        {
+            Inject();
+            WireExpandableColumns();
+        }
+
         public static void Inject()
         {
             WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
@@ -24,6 +33,8 @@ namespace WorkTabGroups
             }
 
             WorkGiverGroupLinks.Clear();
+
+            Dictionary<string, bool> nativeExpandState = CaptureNativeExpandState(columns);
 
             HashSet<PawnColumnDef> reassignedColumns = new HashSet<PawnColumnDef>();
             foreach (MajorWorkGroupData group in manager.Groups)
@@ -50,7 +61,7 @@ namespace WorkTabGroups
                     continue;
                 }
 
-                int insertIndex = ResolveInsertIndex(newColumns, group.insertAfterAnchor, manager);
+                int insertIndex = ResolveInsertIndex(newColumns, group.insertAfterAnchor);
                 insertIndex = Mathf.Clamp(insertIndex, 0, newColumns.Count);
                 newColumns.Insert(insertIndex, groupCol);
 
@@ -72,6 +83,7 @@ namespace WorkTabGroups
                     groupWorker.BindGroup(group);
                     groupWorker.CanExpand = wgCols.Count > 0;
                     groupWorker.Expanded = group.expanded;
+                    CollapseIfCannotExpand(groupWorker);
 
                     foreach (PawnColumnDef wgCol in wgCols)
                     {
@@ -86,6 +98,9 @@ namespace WorkTabGroups
             }
 
             UpdateNativeWorkTypeExpandState(newColumns);
+            RestoreNativeExpandState(newColumns, nativeExpandState);
+            WireNativeWorkTypeLinks(newColumns);
+            InvalidateReassignedWorkGiverCaches();
             PawnTableDefOf.Work.columns = newColumns;
             MainTabWindow_WorkTab.SetCurrentWorkTabDirty();
         }
@@ -111,6 +126,7 @@ namespace WorkTabGroups
 
                     int childCount = j - childStart;
                     groupWorker.CanExpand = childCount > 0;
+                    CollapseIfCannotExpand(groupWorker);
 
                     for (int k = childStart; k < j; k++)
                     {
@@ -142,12 +158,57 @@ namespace WorkTabGroups
                     }
 
                     workTypeWorker.CanExpand = j - (i + 1) > 0;
+                    CollapseIfCannotExpand(workTypeWorker);
                     i = j - 1;
                 }
             }
         }
 
-        private static int ResolveInsertIndex(List<PawnColumnDef> columns, string anchor, WorkTabGroupsManager manager)
+        private static void CollapseIfCannotExpand(IExpandableColumn worker)
+        {
+            if (!worker.CanExpand && worker.Expanded)
+            {
+                worker.Expanded = false;
+            }
+        }
+
+        private static Dictionary<string, bool> CaptureNativeExpandState(List<PawnColumnDef> columns)
+        {
+            var state = new Dictionary<string, bool>();
+            if (columns == null)
+            {
+                return state;
+            }
+
+            foreach (PawnColumnDef col in columns)
+            {
+                if (col.Worker is PawnColumnWorker_WorkType workTypeWorker && col.workType != null)
+                {
+                    state[col.workType.defName] = workTypeWorker.Expanded;
+                }
+            }
+
+            return state;
+        }
+
+        private static void RestoreNativeExpandState(List<PawnColumnDef> columns, Dictionary<string, bool> state)
+        {
+            if (columns == null || state == null || state.Count == 0)
+            {
+                return;
+            }
+
+            foreach (PawnColumnDef col in columns)
+            {
+                if (col.Worker is PawnColumnWorker_WorkType workTypeWorker && col.workType != null &&
+                    state.TryGetValue(col.workType.defName, out bool expanded))
+                {
+                    workTypeWorker.Expanded = expanded;
+                }
+            }
+        }
+
+        private static int ResolveInsertIndex(List<PawnColumnDef> columns, string anchor)
         {
             if (AnchorKeys.IsStart(anchor))
             {
@@ -162,18 +223,7 @@ namespace WorkTabGroups
                     return FindFirstWorkTypeIndex(columns);
                 }
 
-                return EndOfBlockIndex(columns, wtIndex);
-            }
-
-            if (AnchorKeys.TryParseGroup(anchor, out string groupDefName))
-            {
-                int groupIndex = FindMajorGroupIndex(columns, groupDefName, manager);
-                if (groupIndex < 0)
-                {
-                    return columns.Count;
-                }
-
-                return EndOfBlockIndex(columns, groupIndex);
+                return EndOfWorkTypeSectionIndex(columns, wtIndex);
             }
 
             return FindFirstWorkTypeIndex(columns);
@@ -196,7 +246,10 @@ namespace WorkTabGroups
         {
             for (int i = 0; i < columns.Count; i++)
             {
-                if (columns[i].workType != null && columns[i].workType.defName == workTypeName)
+                PawnColumnDef col = columns[i];
+                if (col.workType != null &&
+                    col.workType.defName == workTypeName &&
+                    typeof(PawnColumnWorker_WorkType).IsAssignableFrom(col.workerClass))
                 {
                     return i;
                 }
@@ -205,26 +258,74 @@ namespace WorkTabGroups
             return -1;
         }
 
-        private static int FindMajorGroupIndex(List<PawnColumnDef> columns, string groupDefName, WorkTabGroupsManager manager)
+        /// <summary>
+        /// Index after a WorkType header, its native WorkGivers, and any custom groups already placed after it.
+        /// </summary>
+        private static int EndOfWorkTypeSectionIndex(List<PawnColumnDef> columns, int workTypeHeaderIndex)
         {
-            PawnColumnDef target = manager.GetColumnDefForGroup(manager.GetGroup(groupDefName));
-            if (target == null)
+            int j = workTypeHeaderIndex + 1;
+            while (j < columns.Count)
             {
-                return -1;
-            }
+                if (columns[j].Worker is PawnColumnWorker_WorkGiver)
+                {
+                    j++;
+                    continue;
+                }
 
-            return columns.IndexOf(target);
-        }
+                if (columns[j].Worker is PawnColumnWorker_MajorWorkGroup)
+                {
+                    j++;
+                    while (j < columns.Count && columns[j].Worker is PawnColumnWorker_WorkGiver)
+                    {
+                        j++;
+                    }
 
-        private static int EndOfBlockIndex(List<PawnColumnDef> columns, int headerIndex)
-        {
-            int j = headerIndex + 1;
-            while (j < columns.Count && columns[j].Worker is PawnColumnWorker_WorkGiver)
-            {
-                j++;
+                    continue;
+                }
+
+                break;
             }
 
             return j;
+        }
+
+        private static void WireNativeWorkTypeLinks(List<PawnColumnDef> columns)
+        {
+            for (int i = 0; i < columns.Count; i++)
+            {
+                if (columns[i].Worker is PawnColumnWorker_WorkType workTypeWorker)
+                {
+                    int j = i + 1;
+                    while (j < columns.Count && columns[j].Worker is PawnColumnWorker_WorkGiver)
+                    {
+                        if (columns[j].Worker is PawnColumnWorker_WorkGiver wgWorker)
+                        {
+                            wgWorker.ColumnWorkerWorkType = workTypeWorker;
+                        }
+
+                        j++;
+                    }
+
+                    i = j - 1;
+                }
+            }
+        }
+
+        private static void InvalidateReassignedWorkGiverCaches()
+        {
+            WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
+            if (manager == null)
+            {
+                return;
+            }
+
+            foreach (WorkGiverDef workGiver in WorkGiverGroupLinks.MajorGroupByWorkGiver.Keys)
+            {
+                if (manager.GetWorkGiverColumn(workGiver)?.Worker is PawnColumnWorker_WorkGiver wgWorker)
+                {
+                    wgWorker.InvalidateCache();
+                }
+            }
         }
     }
 }

@@ -59,22 +59,13 @@ namespace WorkTabGroups
             }
 
             var newGroups = new List<MajorWorkGroupData>();
-            var presetToLiveId = new Dictionary<string, string>();
             int id = 0;
 
             foreach (LayoutGroupEntry entry in preset.groups)
             {
                 string liveDefName = "MajorWorkGroup_" + id++;
-                presetToLiveId[entry.presetGroupId] = liveDefName;
 
-                string anchor = entry.insertAfterAnchor ?? string.Empty;
-                if (AnchorKeys.TryParseGroup(anchor, out string presetGroupKey) &&
-                    presetToLiveId.TryGetValue(presetGroupKey, out string liveKey))
-                {
-                    anchor = AnchorKeys.ForGroup(liveKey);
-                }
-
-                var data = new MajorWorkGroupData(liveDefName, entry.groupLabel, anchor);
+                var data = new MajorWorkGroupData(liveDefName, entry.groupLabel, entry.insertAfterAnchor ?? string.Empty);
                 foreach (string wgName in entry.assignedWorkGiverDefNames)
                 {
                     if (DefDatabase<WorkGiverDef>.GetNamedSilentFail(wgName) != null)

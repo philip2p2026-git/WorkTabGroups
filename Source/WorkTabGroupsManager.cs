@@ -136,34 +136,8 @@ namespace WorkTabGroups
 
         public List<MajorWorkGroupData> GetOrderedGroupsForInjection()
         {
-            var remaining = new List<MajorWorkGroupData>(groups);
-            var ordered = new List<MajorWorkGroupData>();
-            var placed = new HashSet<string>();
-
-            while (remaining.Count > 0)
-            {
-                bool placedAny = false;
-                for (int i = remaining.Count - 1; i >= 0; i--)
-                {
-                    MajorWorkGroupData g = remaining[i];
-                    if (CanPlaceGroup(g, placed))
-                    {
-                        ordered.Add(g);
-                        placed.Add(g.defName);
-                        remaining.RemoveAt(i);
-                        placedAny = true;
-                    }
-                }
-
-                if (!placedAny)
-                {
-                    Log.Warning("[WorkTabGroups] Circular or invalid anchor chain detected; appending remaining groups.");
-                    ordered.AddRange(remaining);
-                    break;
-                }
-            }
-
-            return ordered;
+            // Groups share WorkType-only anchors; list order breaks ties for the same anchor.
+            return new List<MajorWorkGroupData>(groups);
         }
 
         public string CreateGroup(string label, string insertAfterAnchor)
@@ -179,7 +153,10 @@ namespace WorkTabGroups
             }
 
             string defName = "MajorWorkGroup_" + nextGroupId++;
-            var data = new MajorWorkGroupData(defName, label.Trim(), insertAfterAnchor ?? string.Empty);
+            var data = new MajorWorkGroupData(defName, label.Trim(), insertAfterAnchor ?? string.Empty)
+            {
+                expanded = true
+            };
             groups.Add(data);
             EnsureImpliedDefs(data);
             RequestColumnRebuild();
@@ -200,7 +177,7 @@ namespace WorkTabGroups
             }
 
             group.label = newLabel.Trim();
-            RequestColumnRebuild();
+            RequestColumnRelayout();
             return null;
         }
 
@@ -232,7 +209,7 @@ namespace WorkTabGroups
             }
 
             group.insertAfterAnchor = insertAfterAnchor ?? string.Empty;
-            RequestColumnRebuild();
+            RequestColumnRelayout();
             return null;
         }
 
@@ -256,8 +233,9 @@ namespace WorkTabGroups
                 group.assignedWorkGiverDefNames.Add(workGiver.defName);
             }
 
+            group.expanded = true;
             workGiverToGroup[workGiver] = group;
-            RequestColumnRebuild();
+            RequestColumnRelayout();
         }
 
         public void UnassignWorkGiver(WorkGiverDef workGiver)
@@ -271,7 +249,12 @@ namespace WorkTabGroups
             {
                 group.assignedWorkGiverDefNames.Remove(workGiver.defName);
                 workGiverToGroup.Remove(workGiver);
-                RequestColumnRebuild();
+                if (group.assignedWorkGiverDefNames.Count == 0)
+                {
+                    group.expanded = false;
+                }
+
+                RequestColumnRelayout();
             }
         }
 
@@ -309,24 +292,14 @@ namespace WorkTabGroups
         public LayoutPreset CaptureLayoutPreset(string presetName)
         {
             var preset = new LayoutPreset { presetName = presetName };
-            var idMap = new Dictionary<string, string>();
 
             foreach (MajorWorkGroupData g in groups)
             {
-                string presetId = "g" + preset.groups.Count;
-                idMap[g.defName] = presetId;
-
-                string anchor = g.insertAfterAnchor;
-                if (AnchorKeys.TryParseGroup(anchor, out string groupKey) && idMap.TryGetValue(groupKey, out string mapped))
-                {
-                    anchor = AnchorKeys.ForPresetGroup(mapped);
-                }
-
                 preset.groups.Add(new LayoutGroupEntry
                 {
                     groupLabel = g.label,
-                    presetGroupId = presetId,
-                    insertAfterAnchor = anchor ?? string.Empty,
+                    presetGroupId = "g" + preset.groups.Count,
+                    insertAfterAnchor = g.insertAfterAnchor ?? string.Empty,
                     assignedWorkGiverDefNames = new List<string>(g.assignedWorkGiverDefNames)
                 });
             }
@@ -344,26 +317,6 @@ namespace WorkTabGroups
             };
         }
 
-        private bool CanPlaceGroup(MajorWorkGroupData group, HashSet<string> placed)
-        {
-            if (AnchorKeys.IsStart(group.insertAfterAnchor))
-            {
-                return true;
-            }
-
-            if (AnchorKeys.TryParseWorkType(group.insertAfterAnchor, out _))
-            {
-                return true;
-            }
-
-            if (AnchorKeys.TryParseGroup(group.insertAfterAnchor, out string groupKey))
-            {
-                return placed.Contains(groupKey);
-            }
-
-            return true;
-        }
-
         private bool ValidateAnchor(string anchor, string selfDefName)
         {
             if (AnchorKeys.IsStart(anchor))
@@ -376,50 +329,7 @@ namespace WorkTabGroups
                 return DefDatabase<WorkTypeDef>.GetNamedSilentFail(wtName) != null;
             }
 
-            if (AnchorKeys.TryParseGroup(anchor, out string groupKey))
-            {
-                if (!string.IsNullOrEmpty(selfDefName) && groupKey == selfDefName)
-                {
-                    return false;
-                }
-
-                if (GetGroup(groupKey) == null)
-                {
-                    return false;
-                }
-
-                return !WouldCreateCycle(selfDefName, anchor);
-            }
-
-            return false;
-        }
-
-        private bool WouldCreateCycle(string selfDefName, string anchor)
-        {
-            if (string.IsNullOrEmpty(selfDefName))
-            {
-                return false;
-            }
-
-            var visited = new HashSet<string> { selfDefName };
-            string current = anchor;
-
-            while (!AnchorKeys.IsStart(current) && AnchorKeys.TryParseGroup(current, out string groupKey))
-            {
-                if (!visited.Add(groupKey))
-                {
-                    return true;
-                }
-
-                MajorWorkGroupData g = GetGroup(groupKey);
-                if (g == null)
-                {
-                    break;
-                }
-
-                current = g.insertAfterAnchor;
-            }
-
+            // Legacy Group: anchors from older saves are rejected; pick a WorkType anchor instead.
             return false;
         }
 
@@ -509,6 +419,11 @@ namespace WorkTabGroups
         public static void RequestColumnRebuild()
         {
             DefGenerator_GenerateImpliedDefs_PreResolve.ReBuildWorkTabColumns();
+        }
+
+        public static void RequestColumnRelayout()
+        {
+            WorkTabGroupsColumnBuilder.RelayoutColumns();
         }
     }
 }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using RimWorld;
 using Verse;
 using WorkTab;
@@ -15,29 +14,14 @@ namespace WorkTabGroups
                 new AnchorOption("WorkTabGroups.Anchor.Start".Translate(), string.Empty)
             };
 
+            // Anchor positions are relative to native WorkType (major work type) headers only.
             foreach (PawnColumnDef col in PawnTableDefOf.Work.columns)
             {
-                if (col.workType != null)
+                if (col.workType != null && typeof(PawnColumnWorker_WorkType).IsAssignableFrom(col.workerClass))
                 {
                     options.Add(new AnchorOption(
                         "WorkTabGroups.Anchor.AfterWorkType".Translate(col.workType.LabelCap),
                         AnchorKeys.ForWorkType(col.workType)));
-                }
-            }
-
-            WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
-            if (manager != null)
-            {
-                foreach (MajorWorkGroupData group in manager.Groups)
-                {
-                    if (group.defName == excludeGroupDefName)
-                    {
-                        continue;
-                    }
-
-                    options.Add(new AnchorOption(
-                        "WorkTabGroups.Anchor.AfterGroup".Translate(group.label),
-                        AnchorKeys.ForGroup(group.defName)));
                 }
             }
 
