@@ -16,7 +16,7 @@ namespace WorkTabGroups
             this.groupDefName = groupDefName;
             MajorWorkGroupData group = WorkTabGroupsManager.Instance?.GetGroup(groupDefName);
             newName = group?.label ?? string.Empty;
-            doCloseButton = true;
+            doCloseButton = false;
             doCloseX = true;
             closeOnClickedOutside = true;
         }
@@ -33,15 +33,26 @@ namespace WorkTabGroups
 
             if (Widgets.ButtonText(new Rect(inRect.width / 2f - 80f, y, 160f, 35f), "OK".Translate()))
             {
-                string error = WorkTabGroupsManager.Instance?.RenameGroup(groupDefName, newName);
-                if (error != null)
-                {
-                    Messages.Message(error, MessageTypeDefOf.RejectInput, false);
-                    return;
-                }
-
-                Close();
+                TryConfirm();
             }
+        }
+
+        public override void OnAcceptKeyPressed()
+        {
+            TryConfirm();
+            Event.current.Use();
+        }
+
+        private void TryConfirm()
+        {
+            string error = WorkTabGroupsManager.Instance?.RenameGroup(groupDefName, newName);
+            if (error != null)
+            {
+                Messages.Message(error, MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+
+            Close();
         }
     }
 }

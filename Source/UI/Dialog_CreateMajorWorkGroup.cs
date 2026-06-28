@@ -17,7 +17,7 @@ namespace WorkTabGroups
         public Dialog_CreateMajorWorkGroup(WorkGiverDef assignAfterCreate = null)
         {
             this.assignAfterCreate = assignAfterCreate;
-            doCloseButton = true;
+            doCloseButton = false;
             doCloseX = true;
             closeOnClickedOutside = true;
             anchorOptions = AnchorPickerUtility.BuildAnchorOptions();
@@ -57,11 +57,17 @@ namespace WorkTabGroups
             y += 45f;
             if (Widgets.ButtonText(new Rect(inRect.width / 2f - 80f, y, 160f, 35f), "WorkTabGroups.Create".Translate()))
             {
-                Confirm();
+                TryConfirm();
             }
         }
 
-        private void Confirm()
+        public override void OnAcceptKeyPressed()
+        {
+            TryConfirm();
+            Event.current.Use();
+        }
+
+        private void TryConfirm()
         {
             WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
             if (manager == null)

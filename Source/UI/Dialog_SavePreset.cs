@@ -14,7 +14,7 @@ namespace WorkTabGroups
         public Dialog_SaveGroupPreset(string groupDefName)
         {
             this.groupDefName = groupDefName;
-            doCloseButton = true;
+            doCloseButton = false;
             doCloseX = true;
             closeOnClickedOutside = true;
         }
@@ -31,29 +31,40 @@ namespace WorkTabGroups
 
             if (Widgets.ButtonText(new Rect(inRect.width / 2f - 80f, y, 160f, 35f), "WorkTabGroups.Save".Translate()))
             {
-                if (string.IsNullOrWhiteSpace(presetName))
-                {
-                    Messages.Message("WorkTabGroups.Error.EmptyName".Translate(), MessageTypeDefOf.RejectInput, false);
-                    return;
-                }
-
-                WorkTabGroupsSettings settings = WorkTabGroupsMod.Settings;
-                MajorWorkGroupData group = WorkTabGroupsManager.Instance?.GetGroup(groupDefName);
-                if (settings == null || group == null)
-                {
-                    return;
-                }
-
-                string error = settings.SaveGroupPreset(presetName.Trim(), group);
-                if (error != null)
-                {
-                    Messages.Message(error, MessageTypeDefOf.RejectInput, false);
-                    return;
-                }
-
-                Messages.Message("WorkTabGroups.PresetSaved".Translate(presetName), MessageTypeDefOf.PositiveEvent, false);
-                Close();
+                TryConfirm();
             }
+        }
+
+        public override void OnAcceptKeyPressed()
+        {
+            TryConfirm();
+            Event.current.Use();
+        }
+
+        private void TryConfirm()
+        {
+            if (string.IsNullOrWhiteSpace(presetName))
+            {
+                Messages.Message("WorkTabGroups.Error.EmptyName".Translate(), MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+
+            WorkTabGroupsSettings settings = WorkTabGroupsMod.Settings;
+            MajorWorkGroupData group = WorkTabGroupsManager.Instance?.GetGroup(groupDefName);
+            if (settings == null || group == null)
+            {
+                return;
+            }
+
+            string error = settings.SaveGroupPreset(presetName.Trim(), group);
+            if (error != null)
+            {
+                Messages.Message(error, MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+
+            Messages.Message("WorkTabGroups.PresetSaved".Translate(presetName), MessageTypeDefOf.PositiveEvent, false);
+            Close();
         }
     }
 
@@ -65,7 +76,7 @@ namespace WorkTabGroups
 
         public Dialog_SaveLayoutPreset()
         {
-            doCloseButton = true;
+            doCloseButton = false;
             doCloseX = true;
             closeOnClickedOutside = true;
         }
@@ -82,29 +93,40 @@ namespace WorkTabGroups
 
             if (Widgets.ButtonText(new Rect(inRect.width / 2f - 80f, y, 160f, 35f), "WorkTabGroups.Save".Translate()))
             {
-                if (string.IsNullOrWhiteSpace(presetName))
-                {
-                    Messages.Message("WorkTabGroups.Error.EmptyName".Translate(), MessageTypeDefOf.RejectInput, false);
-                    return;
-                }
-
-                WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
-                WorkTabGroupsSettings settings = WorkTabGroupsMod.Settings;
-                if (manager == null || settings == null)
-                {
-                    return;
-                }
-
-                string error = settings.SaveLayoutPreset(presetName.Trim(), manager);
-                if (error != null)
-                {
-                    Messages.Message(error, MessageTypeDefOf.RejectInput, false);
-                    return;
-                }
-
-                Messages.Message("WorkTabGroups.PresetSaved".Translate(presetName), MessageTypeDefOf.PositiveEvent, false);
-                Close();
+                TryConfirm();
             }
+        }
+
+        public override void OnAcceptKeyPressed()
+        {
+            TryConfirm();
+            Event.current.Use();
+        }
+
+        private void TryConfirm()
+        {
+            if (string.IsNullOrWhiteSpace(presetName))
+            {
+                Messages.Message("WorkTabGroups.Error.EmptyName".Translate(), MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+
+            WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
+            WorkTabGroupsSettings settings = WorkTabGroupsMod.Settings;
+            if (manager == null || settings == null)
+            {
+                return;
+            }
+
+            string error = settings.SaveLayoutPreset(presetName.Trim(), manager);
+            if (error != null)
+            {
+                Messages.Message(error, MessageTypeDefOf.RejectInput, false);
+                return;
+            }
+
+            Messages.Message("WorkTabGroups.PresetSaved".Translate(presetName), MessageTypeDefOf.PositiveEvent, false);
+            Close();
         }
     }
 }

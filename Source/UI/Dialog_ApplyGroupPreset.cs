@@ -17,7 +17,7 @@ namespace WorkTabGroups
         {
             this.preset = preset;
             anchorOptions = AnchorPickerUtility.BuildAnchorOptions();
-            doCloseButton = true;
+            doCloseButton = false;
             doCloseX = true;
             closeOnClickedOutside = true;
         }
@@ -48,10 +48,21 @@ namespace WorkTabGroups
             y += 45f;
             if (Widgets.ButtonText(new Rect(inRect.width / 2f - 80f, y, 160f, 35f), "WorkTabGroups.Apply".Translate()))
             {
-                string anchor = anchorOptions[anchorIndex].anchor;
-                PresetApplier.ApplyGroupPreset(preset, anchor);
-                Close();
+                TryConfirm();
             }
+        }
+
+        public override void OnAcceptKeyPressed()
+        {
+            TryConfirm();
+            Event.current.Use();
+        }
+
+        private void TryConfirm()
+        {
+            string anchor = anchorOptions[anchorIndex].anchor;
+            PresetApplier.ApplyGroupPreset(preset, anchor);
+            Close();
         }
     }
 }
