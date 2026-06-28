@@ -212,6 +212,16 @@ namespace WorkTabGroups
             return CompactWorkTabCompat.GetMinHeaderHeight(table, fallback);
         }
 
+        /// <summary>
+        /// WorkPriority.GetInteractableHeaderRect uses cachedWorkLabelSize, which is only set in
+        /// WorkPriority.DoHeader from def.workType. Custom groups have no workType and override DoHeader,
+        /// leaving a zero-size click rect.
+        /// </summary>
+        protected override Rect GetInteractableHeaderRect(Rect headerRect, PawnTable table)
+        {
+            return headerRect;
+        }
+
         public override void DoHeader(Rect rect, PawnTable table)
         {
             string label = boundGroup?.label;
