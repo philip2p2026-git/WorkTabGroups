@@ -247,6 +247,59 @@ namespace WorkTabGroups
             RequestColumnRelayout();
         }
 
+        public bool ReorderWorkGiverInGroup(MajorWorkGroupData group, WorkGiverDef workGiver, int direction)
+        {
+            if (group == null || workGiver == null || direction == 0)
+            {
+                return false;
+            }
+
+            List<string> order = group.assignedWorkGiverDefNames;
+            int index = order.IndexOf(workGiver.defName);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            int targetIndex = index + direction;
+            if (targetIndex < 0 || targetIndex >= order.Count)
+            {
+                return false;
+            }
+
+            string moving = order[index];
+            order.RemoveAt(index);
+            order.Insert(targetIndex, moving);
+            RequestColumnRelayout();
+            return true;
+        }
+
+        public bool ReorderNativeWorkGiver(WorkTypeDef workType, WorkGiverDef workGiver, int direction)
+        {
+            if (workType == null || workGiver == null || direction == 0 || IsAssignedToCustomGroup(workGiver))
+            {
+                return false;
+            }
+
+            List<WorkGiverDef> siblings = WorkTabGroupsColumnOrderUtility.GetNativeUnassignedWorkGivers(workType, this);
+            int index = siblings.IndexOf(workGiver);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            int targetIndex = index + direction;
+            if (targetIndex < 0 || targetIndex >= siblings.Count)
+            {
+                return false;
+            }
+
+            WorkGiverDef neighbor = siblings[targetIndex];
+            WorkTabGroupsColumnOrderUtility.SwapPriorityInType(workGiver, neighbor);
+            RequestColumnRelayout();
+            return true;
+        }
+
         public void UnassignWorkGiver(WorkGiverDef workGiver)
         {
             if (workGiver == null)

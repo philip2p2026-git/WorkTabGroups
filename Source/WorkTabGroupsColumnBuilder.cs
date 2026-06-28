@@ -285,7 +285,7 @@ namespace WorkTabGroups
 
                 if (col.Worker is PawnColumnWorker_WorkType && col.workType != null)
                 {
-                    foreach (WorkGiverDef wg in col.workType.workGiversByPriority)
+                    foreach (WorkGiverDef wg in col.workType.workGiversByPriority.OrderByDescending(w => w.priorityInType))
                     {
                         PawnColumnDef wgCol = manager.GetWorkGiverColumn(wg);
                         if (wgCol != null && !reassignedColumns.Contains(wgCol))

@@ -28,6 +28,7 @@
 	<WorkTabGroups.ExpandGroupTip>Ctrl+click to expand WorkGivers in this group</WorkTabGroups.ExpandGroupTip>
 	<WorkTabGroups.CollapseGroupTip>Ctrl+click to collapse WorkGivers in this group</WorkTabGroups.CollapseGroupTip>
 	<WorkTabGroups.GroupHeaderRightClickTip>Right-click for group options</WorkTabGroups.GroupHeaderRightClickTip>
+	<WorkTabGroups.WorkGiverColumnReorderTip>Ctrl+Shift+scroll to reorder this column within its group</WorkTabGroups.WorkGiverColumnReorderTip>
 	<WorkTabGroups.ApplyGroupPresetTitle>Apply group preset: {0}</WorkTabGroups.ApplyGroupPresetTitle>
 	<WorkTabGroups.PresetSaved>Preset saved: {0}</WorkTabGroups.PresetSaved>
 	<WorkTabGroups.WorkGivers>WorkGivers</WorkTabGroups.WorkGivers>
