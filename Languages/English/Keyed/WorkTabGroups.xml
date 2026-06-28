@@ -50,4 +50,10 @@
 	<WorkTabGroups.Settings.DefaultLayout>Default layout for new colonies</WorkTabGroups.Settings.DefaultLayout>
 	<WorkTabGroups.Settings.DefaultLayoutTip>When set, this layout is applied automatically when starting a new game (only if no groups exist yet).</WorkTabGroups.Settings.DefaultLayoutTip>
 	<WorkTabGroups.Settings.None>None</WorkTabGroups.Settings.None>
+
+	<WorkTabGroups.Settings.ModRemovalHeader>Removing this mod</WorkTabGroups.Settings.ModRemovalHeader>
+	<WorkTabGroups.Settings.ModRemovalTip>Before disabling Work Tab Groups, use this on each colony save. It clears custom groups and removes mod data from the save so the game can load without this mod.</WorkTabGroups.Settings.ModRemovalTip>
+	<WorkTabGroups.Settings.PrepareForModRemoval>Prepare save for mod removal</WorkTabGroups.Settings.PrepareForModRemoval>
+	<WorkTabGroups.ConfirmPrepareForModRemoval>Clear all custom work groups and remove Work Tab Groups data from this save? Save the game afterward, then you can disable the mod.</WorkTabGroups.ConfirmPrepareForModRemoval>
+	<WorkTabGroups.PreparedForModRemoval>Work Tab Groups data removed from this save. Save the game, then you can disable the mod.</WorkTabGroups.PreparedForModRemoval>
 </LanguageData>

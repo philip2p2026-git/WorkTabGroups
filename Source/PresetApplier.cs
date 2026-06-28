@@ -9,7 +9,7 @@ namespace WorkTabGroups
     {
         public static void ApplyGroupPreset(GroupPreset preset, string insertAfterAnchor, WorkTabGroupsManager manager = null)
         {
-            manager ??= WorkTabGroupsManager.Instance;
+            manager ??= WorkTabGroupsManager.EnsureRegistered();
             if (manager == null || preset == null)
             {
                 return;
@@ -44,7 +44,7 @@ namespace WorkTabGroups
 
         public static void ApplyLayout(LayoutPreset preset, WorkTabGroupsManager manager = null, bool skipConfirm = false)
         {
-            manager ??= WorkTabGroupsManager.Instance;
+            manager ??= WorkTabGroupsManager.EnsureRegistered();
             if (manager == null || preset == null)
             {
                 return;

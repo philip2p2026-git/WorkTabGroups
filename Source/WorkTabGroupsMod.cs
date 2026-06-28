@@ -125,6 +125,29 @@ namespace WorkTabGroups
             }
 
             listing.Label("WorkTabGroups.Settings.DefaultLayoutTip".Translate());
+            listing.Gap(12f);
+
+            listing.Label("WorkTabGroups.Settings.ModRemovalHeader".Translate());
+            listing.Gap(4f);
+            listing.Label("WorkTabGroups.Settings.ModRemovalTip".Translate());
+            if (listing.ButtonText("WorkTabGroups.Settings.PrepareForModRemoval".Translate()))
+            {
+                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    "WorkTabGroups.ConfirmPrepareForModRemoval".Translate(),
+                    () =>
+                    {
+                        WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
+                        if (manager != null)
+                        {
+                            manager.PrepareForModRemoval();
+                        }
+                        else
+                        {
+                            Messages.Message("WorkTabGroups.PreparedForModRemoval".Translate(), MessageTypeDefOf.PositiveEvent, false);
+                        }
+                    }));
+            }
+
             listing.End();
         }
 
