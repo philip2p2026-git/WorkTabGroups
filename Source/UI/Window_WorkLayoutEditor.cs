@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -12,11 +11,13 @@ namespace WorkTabGroups
         private const float Indent = 20f;
         private const float DragHandleWidth = 18f;
         private const float ToolbarHeight = 36f;
+        private const float DropLineHeight = 4f;
 
         private Vector2 scrollPosition;
         private string selectedGroupDefName;
         private readonly HashSet<string> expandedWorkTypes = new HashSet<string>();
         private int dropLayoutIndex = -1;
+        private float dropInsertionY = -1f;
         private string dropGroupDefName;
         private int dropWorkGiverIndex = -1;
 
@@ -88,38 +89,6 @@ namespace WorkTabGroups
             {
                 OpenLoadPresetMenu();
             }
-
-            x += buttonWidth + 4f;
-            if (!selectedGroupDefName.NullOrEmpty() &&
-                Widgets.ButtonText(new Rect(x, y, buttonWidth, 28f), "WorkTabGroups.RenameGroup".Translate()))
-            {
-                Find.WindowStack.Add(new Dialog_RenameMajorWorkGroup(selectedGroupDefName));
-            }
-
-            x += buttonWidth + 4f;
-            if (!selectedGroupDefName.NullOrEmpty() &&
-                Widgets.ButtonText(new Rect(x, y, buttonWidth, 28f), "WorkTabGroups.DeleteGroup".Translate()))
-            {
-                MajorWorkGroupData group = manager.GetGroup(selectedGroupDefName);
-                if (group != null)
-                {
-                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                        "WorkTabGroups.ConfirmDeleteGroup".Translate(group.label),
-                        () =>
-                        {
-                            manager.DeleteGroup(selectedGroupDefName);
-                            selectedGroupDefName = null;
-                        }));
-                }
-            }
-
-            x += buttonWidth + 4f;
-            if (!selectedGroupDefName.NullOrEmpty() &&
-                Widgets.ButtonText(new Rect(x, y, buttonWidth + 20f, 28f), "WorkTabGroups.SaveAsGroupPreset".Translate()))
-            {
-                Find.WindowStack.Add(new Dialog_SaveGroupPreset(selectedGroupDefName));
-            }
-
         }
 
         private int GetInsertIndexForNewGroup(WorkTabGroupsManager manager)
@@ -193,6 +162,7 @@ namespace WorkTabGroups
 
             float y = 0f;
             dropLayoutIndex = -1;
+            dropInsertionY = -1f;
             dropGroupDefName = null;
             dropWorkGiverIndex = -1;
 
@@ -244,13 +214,29 @@ namespace WorkTabGroups
                     }
                 }
 
-                if (LayoutDragDropState.IsDragging && Mouse.IsOver(rowRect))
+                if (LayoutDragDropState.Kind == LayoutDragDropState.DragKind.CustomGroup && Mouse.IsOver(rowRect))
                 {
                     dropLayoutIndex = i + 1;
+                    dropInsertionY = rowRect.yMax;
                 }
             }
 
+            if (LayoutDragDropState.Kind == LayoutDragDropState.DragKind.CustomGroup &&
+                dropInsertionY >= 0f &&
+                dropLayoutIndex >= 0 &&
+                dropLayoutIndex != LayoutDragDropState.SourceLayoutIndex &&
+                dropLayoutIndex != LayoutDragDropState.SourceLayoutIndex + 1)
+            {
+                LayoutDragDropState.DrawDropLine(
+                    new Rect(0f, dropInsertionY - DropLineHeight * 0.5f, viewRect.width, DropLineHeight));
+            }
+
             Widgets.EndScrollView();
+
+            if (LayoutDragDropState.IsDragging)
+            {
+                LayoutDragDropState.DrawActiveDragVisual();
+            }
         }
 
         private void DrawWorkTypeRow(Rect rect, string workTypeDefName, WorkTabGroupsManager manager)
@@ -259,6 +245,13 @@ namespace WorkTabGroups
             if (workType == null)
             {
                 return;
+            }
+
+            if (LayoutDragDropState.Kind == LayoutDragDropState.DragKind.WorkGiver &&
+                !LayoutDragDropState.SourceGroupDefName.NullOrEmpty() &&
+                Mouse.IsOver(rect))
+            {
+                LayoutDragDropState.DrawDropTargetHighlight(rect, unassignZone: true);
             }
 
             bool expanded = expandedWorkTypes.Contains(workTypeDefName);
@@ -284,12 +277,19 @@ namespace WorkTabGroups
         {
             Rect dragRect = new Rect(rect.x, rect.y, DragHandleWidth, rect.height);
             Rect bodyRect = new Rect(rect.x + DragHandleWidth, rect.y, rect.width - DragHandleWidth, rect.height);
+            bool isSource = LayoutDragDropState.IsSourceCustomGroup(layoutIndex);
 
             Widgets.Label(dragRect, "≡");
             if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && Mouse.IsOver(dragRect))
             {
-                LayoutDragDropState.BeginCustomGroupDrag(layoutIndex);
+                LayoutDragDropState.BeginCustomGroupDrag(layoutIndex, group.label);
                 selectedGroupDefName = group.defName;
+                Event.current.Use();
+            }
+
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 1 && Mouse.IsOver(bodyRect))
+            {
+                OpenCustomGroupContextMenu(group, manager);
                 Event.current.Use();
             }
 
@@ -297,6 +297,13 @@ namespace WorkTabGroups
             {
                 group.expanded = !group.expanded;
                 selectedGroupDefName = group.defName;
+            }
+
+            if (LayoutDragDropState.Kind == LayoutDragDropState.DragKind.WorkGiver && Mouse.IsOver(bodyRect))
+            {
+                dropGroupDefName = group.defName;
+                dropWorkGiverIndex = group.assignedWorkGiverDefNames.Count;
+                LayoutDragDropState.DrawDropTargetHighlight(bodyRect);
             }
 
             if (selectedGroupDefName == group.defName)
@@ -308,21 +315,15 @@ namespace WorkTabGroups
                 Widgets.DrawHighlightIfMouseover(bodyRect);
             }
 
-            if (LayoutDragDropState.Kind == LayoutDragDropState.DragKind.CustomGroup &&
-                dropLayoutIndex == layoutIndex + 1)
+            Color prevColor = GUI.color;
+            if (isSource && LayoutDragDropState.IsDragging)
             {
-                Widgets.DrawBox(new Rect(rect.x, rect.yMax - 2f, rect.width, 2f));
-            }
-
-            if (LayoutDragDropState.Kind == LayoutDragDropState.DragKind.WorkGiver && Mouse.IsOver(bodyRect))
-            {
-                dropGroupDefName = group.defName;
-                dropWorkGiverIndex = group.assignedWorkGiverDefNames.Count;
-                Widgets.DrawHighlight(bodyRect);
+                GUI.color = LayoutDragDropState.DimmedContentColor();
             }
 
             string arrow = group.expanded ? "▼" : "▶";
             Widgets.Label(bodyRect, "  " + arrow + " " + group.label + " (" + "WorkTabGroups.LayoutEditor.CustomGroup".Translate() + ")");
+            GUI.color = prevColor;
             TooltipHandler.TipRegion(bodyRect, "WorkTabGroups.LayoutEditor.CustomGroupTip".Translate());
         }
 
@@ -335,30 +336,126 @@ namespace WorkTabGroups
         {
             Rect dragRect = new Rect(rect.x, rect.y, DragHandleWidth, rect.height);
             Rect bodyRect = new Rect(rect.x + DragHandleWidth, rect.y, rect.width - DragHandleWidth, rect.height);
+            bool isSource = LayoutDragDropState.IsSourceWorkGiver(workGiver.defName, groupDefName, workGiverIndex);
 
             Widgets.Label(dragRect, "≡");
             if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && Mouse.IsOver(dragRect))
             {
-                LayoutDragDropState.BeginWorkGiverDrag(workGiver.defName, groupDefName, workGiverIndex);
+                LayoutDragDropState.BeginWorkGiverDrag(
+                    workGiver.defName,
+                    groupDefName,
+                    workGiverIndex,
+                    workGiver.LabelCap);
                 Event.current.Use();
             }
 
-            Widgets.DrawHighlightIfMouseover(bodyRect);
-            Widgets.Label(bodyRect, "    " + workGiver.LabelCap);
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 1 && Mouse.IsOver(bodyRect))
+            {
+                OpenWorkGiverContextMenu(workGiver, groupDefName, manager);
+                Event.current.Use();
+            }
 
             if (LayoutDragDropState.Kind == LayoutDragDropState.DragKind.WorkGiver &&
                 !groupDefName.NullOrEmpty() &&
-                Mouse.IsOver(rect))
+                Mouse.IsOver(rect) &&
+                !isSource)
             {
                 dropGroupDefName = groupDefName;
                 dropWorkGiverIndex = workGiverIndex;
-                Widgets.DrawBox(new Rect(rect.x, rect.y, rect.width, 2f));
+                LayoutDragDropState.DrawDropLine(new Rect(rect.x, rect.y, rect.width, DropLineHeight));
             }
 
-            if (LayoutDragDropState.IsDragging && LayoutDragDropState.Kind == LayoutDragDropState.DragKind.WorkGiver)
+            Widgets.DrawHighlightIfMouseover(bodyRect);
+
+            Color prevColor = GUI.color;
+            if (isSource && LayoutDragDropState.IsDragging)
             {
-                LayoutDragDropState.DrawGhost(rect);
+                GUI.color = LayoutDragDropState.DimmedContentColor();
             }
+
+            Widgets.Label(bodyRect, "    " + workGiver.LabelCap);
+            GUI.color = prevColor;
+            TooltipHandler.TipRegion(bodyRect, "WorkTabGroups.LayoutEditor.WorkGiverTip".Translate());
+        }
+
+        private void OpenCustomGroupContextMenu(MajorWorkGroupData group, WorkTabGroupsManager manager)
+        {
+            string defName = group.defName;
+            var options = new List<FloatMenuOption>
+            {
+                new FloatMenuOption("WorkTabGroups.RenameGroup".Translate(), () =>
+                    Find.WindowStack.Add(new Dialog_RenameMajorWorkGroup(defName))),
+                new FloatMenuOption("WorkTabGroups.DeleteGroup".Translate(), () =>
+                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                        "WorkTabGroups.ConfirmDeleteGroup".Translate(group.label),
+                        () =>
+                        {
+                            manager.DeleteGroup(defName);
+                            if (selectedGroupDefName == defName)
+                            {
+                                selectedGroupDefName = null;
+                            }
+                        })))
+            };
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private void OpenWorkGiverContextMenu(WorkGiverDef workGiver, string currentGroupDefName, WorkTabGroupsManager manager)
+        {
+            var options = new List<FloatMenuOption>();
+            List<MajorWorkGroupData> groups = GetCustomGroupsInLayout(manager);
+
+            if (groups.Count == 0)
+            {
+                options.Add(new FloatMenuOption("WorkTabGroups.LayoutEditor.NoCustomGroups".Translate(), null));
+            }
+            else
+            {
+                foreach (MajorWorkGroupData group in groups)
+                {
+                    if (group.defName == currentGroupDefName)
+                    {
+                        continue;
+                    }
+
+                    MajorWorkGroupData captured = group;
+                    options.Add(new FloatMenuOption(
+                        "WorkTabGroups.LayoutEditor.AssignToGroup".Translate(captured.label),
+                        () => manager.AssignWorkGiver(workGiver, captured.defName)));
+                }
+            }
+
+            if (!currentGroupDefName.NullOrEmpty())
+            {
+                options.Add(new FloatMenuOption(
+                    "WorkTabGroups.LayoutEditor.RemoveFromGroup".Translate(),
+                    () => manager.UnassignWorkGiver(workGiver)));
+            }
+
+            if (options.Count > 0)
+            {
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+        }
+
+        private static List<MajorWorkGroupData> GetCustomGroupsInLayout(WorkTabGroupsManager manager)
+        {
+            var groups = new List<MajorWorkGroupData>();
+            foreach (WorkLayoutEntry entry in manager.WorkLayoutOrder)
+            {
+                if (entry.kind != WorkLayoutEntryKind.CustomGroup)
+                {
+                    continue;
+                }
+
+                MajorWorkGroupData group = manager.GetGroup(entry.key);
+                if (group != null)
+                {
+                    groups.Add(group);
+                }
+            }
+
+            return groups;
         }
 
         private void TryCompleteDrag(WorkTabGroupsManager manager)

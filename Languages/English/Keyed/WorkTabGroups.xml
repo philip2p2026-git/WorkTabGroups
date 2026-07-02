@@ -7,8 +7,12 @@
 	<WorkTabGroups.LayoutEditor.NoPresets>No saved layout presets.</WorkTabGroups.LayoutEditor.NoPresets>
 	<WorkTabGroups.LayoutEditor.NoGame>Load a colony to edit the work layout.</WorkTabGroups.LayoutEditor.NoGame>
 	<WorkTabGroups.LayoutEditor.CustomGroup>custom group</WorkTabGroups.LayoutEditor.CustomGroup>
-	<WorkTabGroups.LayoutEditor.WorkTypeTip>Native work type. Expand to see unassigned WorkGivers. Drag them into a custom group.</WorkTabGroups.LayoutEditor.WorkTypeTip>
-	<WorkTabGroups.LayoutEditor.CustomGroupTip>Drag to reorder among work types. Drop WorkGivers here to assign them.</WorkTabGroups.LayoutEditor.CustomGroupTip>
+	<WorkTabGroups.LayoutEditor.WorkTypeTip>Native work type. Expand to see unassigned WorkGivers. Drag them into a custom group, or right-click a WorkGiver to assign it.</WorkTabGroups.LayoutEditor.WorkTypeTip>
+	<WorkTabGroups.LayoutEditor.CustomGroupTip>Drag the handle to reorder among work types. Drop WorkGivers here to assign them. Right-click to rename or delete.</WorkTabGroups.LayoutEditor.CustomGroupTip>
+	<WorkTabGroups.LayoutEditor.WorkGiverTip>Drag the handle to assign or reorder. Right-click to assign to a group or remove from the current group.</WorkTabGroups.LayoutEditor.WorkGiverTip>
+	<WorkTabGroups.LayoutEditor.AssignToGroup>Assign to {0}</WorkTabGroups.LayoutEditor.AssignToGroup>
+	<WorkTabGroups.LayoutEditor.RemoveFromGroup>Remove from group</WorkTabGroups.LayoutEditor.RemoveFromGroup>
+	<WorkTabGroups.LayoutEditor.NoCustomGroups>No custom groups yet. Add one first.</WorkTabGroups.LayoutEditor.NoCustomGroups>
 	<WorkTabGroups.LayoutEditor.ApplyGroupPresetTip>Applies this group preset at the end of the current layout. Reorder it in the layout editor afterward.</WorkTabGroups.LayoutEditor.ApplyGroupPresetTip>
 
 	<WorkTabGroups.SaveLayoutPresetTitle>Save layout preset</WorkTabGroups.SaveLayoutPresetTitle>
