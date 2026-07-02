@@ -11,10 +11,9 @@ namespace WorkTabGroups
         private const float RowHeight = 28f;
         private const float Indent = 20f;
         private const float DragHandleWidth = 18f;
-        private const float ToolbarHeight = 68f;
+        private const float ToolbarHeight = 36f;
 
         private Vector2 scrollPosition;
-        private string newGroupName = string.Empty;
         private string selectedGroupDefName;
         private readonly HashSet<string> expandedWorkTypes = new HashSet<string>();
         private int dropLayoutIndex = -1;
@@ -53,9 +52,17 @@ namespace WorkTabGroups
             Rect listRect = new Rect(0f, 34f + ToolbarHeight + 6f, inRect.width, inRect.height - 40f - ToolbarHeight);
             DrawLayoutList(listRect, manager);
 
-            if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
+            if (LayoutDragDropState.IsDragging)
             {
-                TryCompleteDrag(manager);
+                if (Event.current.type == EventType.MouseDrag)
+                {
+                    Event.current.Use();
+                }
+
+                if (Event.current.rawType == EventType.MouseUp && Event.current.button == 0)
+                {
+                    TryCompleteDrag(manager);
+                }
             }
         }
 
@@ -67,7 +74,7 @@ namespace WorkTabGroups
 
             if (Widgets.ButtonText(new Rect(x, y, buttonWidth, 28f), "WorkTabGroups.LayoutEditor.AddGroup".Translate()))
             {
-                TryAddGroup(manager);
+                Find.WindowStack.Add(new Dialog_AddMajorWorkGroup(GetInsertIndexForNewGroup(manager)));
             }
 
             x += buttonWidth + 4f;
@@ -113,19 +120,10 @@ namespace WorkTabGroups
                 Find.WindowStack.Add(new Dialog_SaveGroupPreset(selectedGroupDefName));
             }
 
-            float nameFieldY = y + 32f;
-            Widgets.Label(new Rect(rect.x, nameFieldY, 90f, 24f), "WorkTabGroups.GroupName".Translate());
-            newGroupName = Widgets.TextField(new Rect(rect.x + 92f, nameFieldY, rect.width - 92f, 24f), newGroupName);
         }
 
-        private void TryAddGroup(WorkTabGroupsManager manager)
+        private int GetInsertIndexForNewGroup(WorkTabGroupsManager manager)
         {
-            if (newGroupName.NullOrEmpty())
-            {
-                Messages.Message("WorkTabGroups.Error.EmptyName".Translate(), MessageTypeDefOf.RejectInput, false);
-                return;
-            }
-
             int insertIndex = manager.WorkLayoutOrder.Count;
             if (!selectedGroupDefName.NullOrEmpty())
             {
@@ -140,14 +138,7 @@ namespace WorkTabGroups
                 }
             }
 
-            string error = manager.CreateGroup(newGroupName, insertIndex);
-            if (error != null)
-            {
-                Messages.Message(error, MessageTypeDefOf.RejectInput, false);
-                return;
-            }
-
-            newGroupName = string.Empty;
+            return insertIndex;
         }
 
         private void OpenLoadPresetMenu()
@@ -295,7 +286,7 @@ namespace WorkTabGroups
             Rect bodyRect = new Rect(rect.x + DragHandleWidth, rect.y, rect.width - DragHandleWidth, rect.height);
 
             Widgets.Label(dragRect, "≡");
-            if (Widgets.ButtonInvisible(dragRect) && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && Mouse.IsOver(dragRect))
             {
                 LayoutDragDropState.BeginCustomGroupDrag(layoutIndex);
                 selectedGroupDefName = group.defName;
@@ -346,7 +337,7 @@ namespace WorkTabGroups
             Rect bodyRect = new Rect(rect.x + DragHandleWidth, rect.y, rect.width - DragHandleWidth, rect.height);
 
             Widgets.Label(dragRect, "≡");
-            if (Widgets.ButtonInvisible(dragRect) && Event.current.type == EventType.MouseDown && Event.current.button == 0)
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && Mouse.IsOver(dragRect))
             {
                 LayoutDragDropState.BeginWorkGiverDrag(workGiver.defName, groupDefName, workGiverIndex);
                 Event.current.Use();
