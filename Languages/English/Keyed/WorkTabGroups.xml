@@ -1,34 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
-	<WorkTabGroups.AddGroupTip>Create a new custom work group</WorkTabGroups.AddGroupTip>
-	<WorkTabGroups.PresetsTip>Work group presets</WorkTabGroups.PresetsTip>
-	<WorkTabGroups.CreateGroupTitle>Create work group</WorkTabGroups.CreateGroupTitle>
-	<WorkTabGroups.GroupName>Group name</WorkTabGroups.GroupName>
-	<WorkTabGroups.InsertAfter>Insert after</WorkTabGroups.InsertAfter>
-	<WorkTabGroups.Create>Create</WorkTabGroups.Create>
-	<WorkTabGroups.RenameGroup>Rename group</WorkTabGroups.RenameGroup>
-	<WorkTabGroups.RenameGroupTitle>Rename work group</WorkTabGroups.RenameGroupTitle>
-	<WorkTabGroups.ChangePosition>Change position</WorkTabGroups.ChangePosition>
-	<WorkTabGroups.ChangePositionTitle>Change group position</WorkTabGroups.ChangePositionTitle>
-	<WorkTabGroups.DeleteGroup>Delete group</WorkTabGroups.DeleteGroup>
-	<WorkTabGroups.SaveAsGroupPreset>Save as group preset</WorkTabGroups.SaveAsGroupPreset>
-	<WorkTabGroups.SaveGroupPresetTitle>Save group preset</WorkTabGroups.SaveGroupPresetTitle>
+	<WorkTabGroups.LayoutEditor.OpenTip>Open work layout editor</WorkTabGroups.LayoutEditor.OpenTip>
+	<WorkTabGroups.LayoutEditor.Title>Work layout editor</WorkTabGroups.LayoutEditor.Title>
+	<WorkTabGroups.LayoutEditor.AddGroup>Add group</WorkTabGroups.LayoutEditor.AddGroup>
+	<WorkTabGroups.LayoutEditor.LoadPreset>Load preset</WorkTabGroups.LayoutEditor.LoadPreset>
+	<WorkTabGroups.LayoutEditor.NoPresets>No saved layout presets.</WorkTabGroups.LayoutEditor.NoPresets>
+	<WorkTabGroups.LayoutEditor.NoGame>Load a colony to edit the work layout.</WorkTabGroups.LayoutEditor.NoGame>
+	<WorkTabGroups.LayoutEditor.CustomGroup>custom group</WorkTabGroups.LayoutEditor.CustomGroup>
+	<WorkTabGroups.LayoutEditor.WorkTypeTip>Native work type. Expand to see unassigned WorkGivers. Drag them into a custom group.</WorkTabGroups.LayoutEditor.WorkTypeTip>
+	<WorkTabGroups.LayoutEditor.CustomGroupTip>Drag to reorder among work types. Drop WorkGivers here to assign them.</WorkTabGroups.LayoutEditor.CustomGroupTip>
+	<WorkTabGroups.LayoutEditor.ApplyGroupPresetTip>Applies this group preset at the end of the current layout. Reorder it in the layout editor afterward.</WorkTabGroups.LayoutEditor.ApplyGroupPresetTip>
+
 	<WorkTabGroups.SaveLayoutPresetTitle>Save layout preset</WorkTabGroups.SaveLayoutPresetTitle>
 	<WorkTabGroups.SaveLayoutPreset>Save current layout as preset</WorkTabGroups.SaveLayoutPreset>
 	<WorkTabGroups.LoadLayoutPreset>Load layout: {0}</WorkTabGroups.LoadLayoutPreset>
+	<WorkTabGroups.SaveGroupPresetTitle>Save group preset</WorkTabGroups.SaveGroupPresetTitle>
+	<WorkTabGroups.SaveAsGroupPreset>Save as group preset</WorkTabGroups.SaveAsGroupPreset>
 	<WorkTabGroups.Save>Save</WorkTabGroups.Save>
 	<WorkTabGroups.Apply>Apply</WorkTabGroups.Apply>
 	<WorkTabGroups.Delete>Delete</WorkTabGroups.Delete>
-	<WorkTabGroups.OpenModSettings>Open mod settings</WorkTabGroups.OpenModSettings>
-	<WorkTabGroups.MoveToGroup>Move to group: {0}</WorkTabGroups.MoveToGroup>
-	<WorkTabGroups.RemoveFromGroup>Remove from group</WorkTabGroups.RemoveFromGroup>
-	<WorkTabGroups.NewGroup>New group...</WorkTabGroups.NewGroup>
+	<WorkTabGroups.CreateGroupTitle>Create work group</WorkTabGroups.CreateGroupTitle>
+	<WorkTabGroups.GroupName>Group name</WorkTabGroups.GroupName>
+	<WorkTabGroups.Create>Create</WorkTabGroups.Create>
+	<WorkTabGroups.RenameGroup>Rename</WorkTabGroups.RenameGroup>
+	<WorkTabGroups.RenameGroupTitle>Rename work group</WorkTabGroups.RenameGroupTitle>
+	<WorkTabGroups.DeleteGroup>Delete group</WorkTabGroups.DeleteGroup>
 	<WorkTabGroups.ConfirmDeleteGroup>Delete group "{0}"? Assigned WorkGivers will return to their native work types.</WorkTabGroups.ConfirmDeleteGroup>
 	<WorkTabGroups.ConfirmReplaceLayout>Replace all current custom work groups with this layout preset?</WorkTabGroups.ConfirmReplaceLayout>
 	<WorkTabGroups.ExpandGroupTip>Ctrl+click to expand WorkGivers in this group</WorkTabGroups.ExpandGroupTip>
 	<WorkTabGroups.CollapseGroupTip>Ctrl+click to collapse WorkGivers in this group</WorkTabGroups.CollapseGroupTip>
-	<WorkTabGroups.GroupHeaderRightClickTip>Right-click for group options</WorkTabGroups.GroupHeaderRightClickTip>
-	<WorkTabGroups.WorkGiverColumnReorderTip>Ctrl+Shift+scroll to reorder this column within its group</WorkTabGroups.WorkGiverColumnReorderTip>
 	<WorkTabGroups.ApplyGroupPresetTitle>Apply group preset: {0}</WorkTabGroups.ApplyGroupPresetTitle>
 	<WorkTabGroups.PresetSaved>Preset saved: {0}</WorkTabGroups.PresetSaved>
 	<WorkTabGroups.WorkGivers>WorkGivers</WorkTabGroups.WorkGivers>
@@ -38,15 +38,9 @@
 	<WorkTabGroups.Error.GroupNotFound>Group not found.</WorkTabGroups.Error.GroupNotFound>
 	<WorkTabGroups.Error.DuplicatePresetName>A preset named "{0}" already exists.</WorkTabGroups.Error.DuplicatePresetName>
 
-	<WorkTabGroups.Anchor.Start>Start of work columns</WorkTabGroups.Anchor.Start>
-	<WorkTabGroups.Anchor.AfterWorkType>After {0}</WorkTabGroups.Anchor.AfterWorkType>
-	<WorkTabGroups.Anchor.AfterGroup>After group: {0}</WorkTabGroups.Anchor.AfterGroup>
-
-	<WorkTabGroups.Settings.GroupsHeader>Current colony groups</WorkTabGroups.Settings.GroupsHeader>
-	<WorkTabGroups.Settings.NoGroups>No custom groups in the current colony.</WorkTabGroups.Settings.NoGroups>
-	<WorkTabGroups.Settings.PresetsHeader>Layout presets</WorkTabGroups.Settings.PresetsHeader>
-	<WorkTabGroups.Settings.LoadLayout>Saved layouts</WorkTabGroups.Settings.LoadLayout>
-	<WorkTabGroups.Settings.GroupPresetsHeader>Group presets</WorkTabGroups.Settings.GroupPresetsHeader>
+	<WorkTabGroups.Settings.LayoutEditorTip>Edit colony work layout from the Work tab using the L button, or from this mod's layout window.</WorkTabGroups.Settings.LayoutEditorTip>
+	<WorkTabGroups.Settings.PresetsHeader>Global presets</WorkTabGroups.Settings.PresetsHeader>
+	<WorkTabGroups.Settings.GroupPresetsHeader>Saved group presets</WorkTabGroups.Settings.GroupPresetsHeader>
 	<WorkTabGroups.Settings.DefaultLayout>Default layout for new colonies</WorkTabGroups.Settings.DefaultLayout>
 	<WorkTabGroups.Settings.DefaultLayoutTip>When set, this layout is applied automatically when starting a new game (only if no groups exist yet).</WorkTabGroups.Settings.DefaultLayoutTip>
 	<WorkTabGroups.Settings.None>None</WorkTabGroups.Settings.None>

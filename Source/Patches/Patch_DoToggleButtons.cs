@@ -19,17 +19,10 @@ namespace WorkTabGroups.Patches
             // Shift left past Work Tab's three toggle buttons
             buttonRect.x -= (ButtonSize + margin) * 3f;
 
-            TooltipHandler.TipRegion(buttonRect, "WorkTabGroups.AddGroupTip".Translate());
-            if (Widgets.ButtonText(buttonRect, "+", true, true, true))
+            TooltipHandler.TipRegion(buttonRect, "WorkTabGroups.LayoutEditor.OpenTip".Translate());
+            if (Widgets.ButtonText(buttonRect, "L", true, true, true))
             {
-                Find.WindowStack.Add(new Dialog_CreateMajorWorkGroup());
-            }
-
-            buttonRect.x -= ButtonSize + margin;
-            TooltipHandler.TipRegion(buttonRect, "WorkTabGroups.PresetsTip".Translate());
-            if (Widgets.ButtonText(buttonRect, "P", true, true, true))
-            {
-                WorkTabUIUtility.OpenPresetsFloatMenu();
+                Find.WindowStack.Add(new Window_WorkLayoutEditor());
             }
         }
     }

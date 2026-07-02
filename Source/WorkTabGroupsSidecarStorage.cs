@@ -76,7 +76,7 @@ namespace WorkTabGroups
             }
 
             WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
-            manager.ApplyPersistedState(data.groups, data.nextGroupId);
+            manager.ApplyPersistedState(data.groups, data.workLayoutOrder, data.nextGroupId);
         }
 
         public static void DeleteForCurrentSave()

@@ -28,79 +28,12 @@ namespace WorkTabGroups
             Listing_Standard listing = new Listing_Standard();
             listing.Begin(inRect);
 
-            listing.Label("WorkTabGroups.Settings.GroupsHeader".Translate());
-            listing.Gap(6f);
-
-            WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
-            if (manager != null && manager.Groups.Count > 0)
-            {
-                foreach (MajorWorkGroupData group in manager.Groups.ToList())
-                {
-                    listing.Label(group.label + " (" + group.assignedWorkGiverDefNames.Count + " WorkTabGroups.WorkGivers".Translate() + ")");
-                    string defName = group.defName;
-                    string label = group.label;
-                    if (listing.ButtonText("WorkTabGroups.Delete".Translate() + ": " + label))
-                    {
-                        Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                            "WorkTabGroups.ConfirmDeleteGroup".Translate(label),
-                            () => WorkTabGroupsManager.Instance?.DeleteGroup(defName)));
-                    }
-
-                    listing.Gap(2f);
-                }
-            }
-            else
-            {
-                listing.Label("WorkTabGroups.Settings.NoGroups".Translate());
-            }
-
+            listing.Label("WorkTabGroups.Settings.LayoutEditorTip".Translate());
             listing.Gap(12f);
+
             listing.Label("WorkTabGroups.Settings.PresetsHeader".Translate());
             listing.Gap(6f);
 
-            if (listing.ButtonText("WorkTabGroups.SaveLayoutPreset".Translate()))
-            {
-                Find.WindowStack.Add(new Dialog_SaveLayoutPreset());
-            }
-
-            listing.Gap(4f);
-            listing.Label("WorkTabGroups.Settings.LoadLayout".Translate());
-            for (int i = 0; i < Settings.layoutPresets.Count; i++)
-            {
-                LayoutPreset preset = Settings.layoutPresets[i];
-                if (listing.ButtonText("WorkTabGroups.Apply".Translate() + ": " + preset.presetName))
-                {
-                    PresetApplier.ApplyLayout(preset);
-                }
-
-                if (listing.ButtonText("WorkTabGroups.Delete".Translate() + ": " + preset.presetName))
-                {
-                    Settings.DeleteLayoutPreset(preset.presetName);
-                }
-
-                listing.Gap(2f);
-            }
-
-            listing.Gap(8f);
-            listing.Label("WorkTabGroups.Settings.GroupPresetsHeader".Translate());
-            for (int i = 0; i < Settings.groupPresets.Count; i++)
-            {
-                GroupPreset preset = Settings.groupPresets[i];
-                listing.Label(preset.presetName + " → " + preset.groupLabel);
-                if (listing.ButtonText("WorkTabGroups.Apply".Translate() + ": " + preset.presetName))
-                {
-                    Find.WindowStack.Add(new Dialog_ApplyGroupPreset(preset));
-                }
-
-                if (listing.ButtonText("WorkTabGroups.Delete".Translate() + ": " + preset.presetName))
-                {
-                    Settings.DeleteGroupPreset(preset.presetName);
-                }
-
-                listing.Gap(2f);
-            }
-
-            listing.Gap(12f);
             listing.Label("WorkTabGroups.Settings.DefaultLayout".Translate());
             listing.Gap(4f);
 
@@ -136,6 +69,20 @@ namespace WorkTabGroups
             listing.Label("WorkTabGroups.Settings.DefaultLayoutTip".Translate());
             listing.Gap(12f);
 
+            listing.Label("WorkTabGroups.Settings.GroupPresetsHeader".Translate());
+            for (int i = 0; i < Settings.groupPresets.Count; i++)
+            {
+                GroupPreset preset = Settings.groupPresets[i];
+                listing.Label(preset.presetName + " → " + preset.groupLabel);
+                if (listing.ButtonText("WorkTabGroups.Delete".Translate() + ": " + preset.presetName))
+                {
+                    Settings.DeleteGroupPreset(preset.presetName);
+                }
+
+                listing.Gap(2f);
+            }
+
+            listing.Gap(12f);
             listing.Label("WorkTabGroups.Settings.ModRemovalHeader".Translate());
             listing.Gap(4f);
             listing.Label("WorkTabGroups.Settings.ModRemovalTip".Translate());

@@ -45,14 +45,21 @@ namespace WorkTabGroups
     {
         public string presetName;
         public List<LayoutGroupEntry> groups = new List<LayoutGroupEntry>();
+        public List<WorkLayoutEntry> layoutOrder = new List<WorkLayoutEntry>();
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref presetName, "presetName");
             Scribe_Collections.Look(ref groups, "groups", LookMode.Deep);
+            Scribe_Collections.Look(ref layoutOrder, "layoutOrder", LookMode.Deep);
             if (groups == null)
             {
                 groups = new List<LayoutGroupEntry>();
+            }
+
+            if (layoutOrder == null)
+            {
+                layoutOrder = new List<WorkLayoutEntry>();
             }
         }
     }

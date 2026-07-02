@@ -3,7 +3,7 @@
 	<name>Work Tab Groups</name>
 	<author>philip2p2026</author>
 	<packageId>philip2p2026.worktabgroups</packageId>
-	<description>Create custom collapsible work groups in the Work Tab. Reassign WorkGiver columns into your own groups, save layouts as global presets, and optionally auto-apply a default layout on new colonies. Requires Work Tab.</description>
+	<description>Organize the Work Tab with custom collapsible work groups. Use the layout editor to arrange work types and groups, assign WorkGivers by drag-and-drop, and save layouts as global presets. The Work Tab itself is for viewing priorities only. Requires Work Tab.</description>
 	<supportedVersions>
 		<li>1.5</li>
 		<li>1.6</li>

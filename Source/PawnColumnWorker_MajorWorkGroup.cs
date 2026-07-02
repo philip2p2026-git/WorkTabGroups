@@ -275,7 +275,6 @@ namespace WorkTabGroups
                 tip += "\n" + "WorkTabGroups.ExpandGroupTip".Translate().Colorize(ColoredText.SubtleGrayColor);
             }
 
-            tip += "\n" + "WorkTabGroups.GroupHeaderRightClickTip".Translate().Colorize(ColoredText.SubtleGrayColor);
             return CreateHeaderTip(tip);
         }
 
@@ -292,13 +291,6 @@ namespace WorkTabGroups
 
         protected override void HeaderInteractions(Rect headerRect, PawnTable table, bool clicked = false)
         {
-            bool rightClick = clicked ? InteractionUtilities.RightClicked() : InteractionUtilities.RightClicked(headerRect);
-            if (rightClick && !InteractionUtilities.Shift)
-            {
-                TryOpenGroupContextMenu(headerRect);
-                return;
-            }
-
             if (!Mouse.IsOver(headerRect) || !InteractionUtilities.Shift)
             {
                 return;
@@ -342,38 +334,6 @@ namespace WorkTabGroups
                         pawn, boundGroup, Settings.defaultPriority, MainTabWindow_WorkTab.SelectedHours);
                 }
             }
-        }
-
-        private void TryOpenGroupContextMenu(Rect headerRect)
-        {
-            if (boundGroup == null)
-            {
-                return;
-            }
-
-            var options = new List<FloatMenuOption>
-            {
-                new FloatMenuOption("WorkTabGroups.RenameGroup".Translate(), () =>
-                {
-                    Find.WindowStack.Add(new Dialog_RenameMajorWorkGroup(boundGroup.defName));
-                }),
-                new FloatMenuOption("WorkTabGroups.ChangePosition".Translate(), () =>
-                {
-                    Find.WindowStack.Add(new Dialog_PickAnchor(boundGroup.defName, isNewGroup: false));
-                }),
-                new FloatMenuOption("WorkTabGroups.SaveAsGroupPreset".Translate(), () =>
-                {
-                    Find.WindowStack.Add(new Dialog_SaveGroupPreset(boundGroup.defName));
-                }),
-                new FloatMenuOption("WorkTabGroups.DeleteGroup".Translate(), () =>
-                {
-                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                        "WorkTabGroups.ConfirmDeleteGroup".Translate(boundGroup.label),
-                        () => WorkTabGroupsManager.Instance?.DeleteGroup(boundGroup.defName)));
-                })
-            };
-
-            Find.WindowStack.Add(new FloatMenu(options));
         }
 
         private bool HasLowRelevantSkill(Pawn pawn)
