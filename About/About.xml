@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-	<name>Work Tab Groups</name>
+	<name>Customize your WorkGroup</name>
 	<author>philip2p2026</author>
 	<packageId>philip2p2026.worktabgroups</packageId>
 	<description>Organize the Work Tab with custom collapsible work groups. Use the layout editor to arrange work types and groups, assign WorkGivers by drag-and-drop, and save layouts as global presets. The Work Tab itself is for viewing priorities only. Requires Work Tab.</description>
