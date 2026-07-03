@@ -51,7 +51,7 @@
 	<WorkTabGroups.Settings.None>None</WorkTabGroups.Settings.None>
 
 	<WorkTabGroups.Settings.ModRemovalHeader>Removing this mod</WorkTabGroups.Settings.ModRemovalHeader>
-	<WorkTabGroups.Settings.ModRemovalTip>Group data is stored outside the colony save. Use Prepare save for mod removal, then save the colony before disabling this mod — loading without that step can break saves that still reference this mod. After updating, load each colony once with this mod enabled and save to migrate old saves.</WorkTabGroups.Settings.ModRemovalTip>
+	<WorkTabGroups.Settings.ModRemovalTip>Group layout is stored outside the colony save. Disabling this mod without preparing is usually safe, but Prepare + save is recommended to delete the sidecar file and restore the vanilla Work Tab column layout. After updating, load each colony once with this mod enabled and save to migrate old saves.</WorkTabGroups.Settings.ModRemovalTip>
 	<WorkTabGroups.Settings.PrepareForModRemoval>Prepare save for mod removal</WorkTabGroups.Settings.PrepareForModRemoval>
 	<WorkTabGroups.ConfirmPrepareForModRemoval>Clear all custom work groups and remove Work Tab Groups data from this save? You must save the game afterward before disabling the mod.</WorkTabGroups.ConfirmPrepareForModRemoval>
 	<WorkTabGroups.PreparedForModRemoval>Work Tab Groups data removed from this colony. Save the game now, then you can disable the mod.</WorkTabGroups.PreparedForModRemoval>

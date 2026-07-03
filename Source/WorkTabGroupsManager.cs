@@ -61,6 +61,8 @@ namespace WorkTabGroups
 
         internal List<WorkLayoutEntry> WorkLayoutOrderMutable => workLayoutOrder;
 
+        internal List<MajorWorkGroupData> GroupsMutable => groups;
+
         public WorkTabGroupsManager(Game game)
         {
             instance = this;
@@ -233,6 +235,12 @@ namespace WorkTabGroups
         public void PrepareForModRemoval()
         {
             LayoutSanitizer.PruneInvalidReferences(this);
+
+            foreach (WorkGiverDef workGiver in workGiverToGroup.Keys.ToList())
+            {
+                UnassignWorkGiver(workGiver);
+            }
+
             ClearAllGroups();
             WorkTabGroupsSidecarStorage.DeleteForCurrentSave();
 

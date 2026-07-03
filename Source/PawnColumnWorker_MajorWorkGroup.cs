@@ -340,7 +340,8 @@ namespace WorkTabGroups
         {
             foreach (WorkGiverDef wg in MajorWorkGroupPriorityUtility.GetAssignedWorkGivers(boundGroup))
             {
-                if (wg.workType.relevantSkills.Any() &&
+                if (wg.workType != null &&
+                    wg.workType.relevantSkills.Any() &&
                     pawn.skills.AverageOfRelevantSkillsFor(wg.workType) <= 2f)
                 {
                     return true;

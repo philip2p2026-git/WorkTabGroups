@@ -106,7 +106,7 @@ Singleton via `Instance` / `EnsureRegistered()`.
 | `MoveWorkGiverWithinGroup` | Reorder `assignedWorkGiverDefNames` |
 | `ReplaceGroupsFromPreset(groups, layoutOrder)` | Apply layout preset |
 | `CaptureLayoutPreset` / `CaptureGroupPreset` | Serialize to mod settings |
-| `PrepareForModRemoval()` | Clear groups, delete sidecar, remove component |
+| `PrepareForModRemoval()` | Unassign all WorkGivers, clear groups, rebuild vanilla columns, delete sidecar, remove component |
 
 ### Persistence
 
@@ -118,7 +118,18 @@ Singleton via `Instance` / `EnsureRegistered()`.
 
 On save, `Patch_Game_ExposeData` strips the manager from the main save XML; `WorkTabGroupsSidecarStorage` writes the sidecar.
 
-On load, if the in-memory manager has no groups, the sidecar is applied via `ApplyPersistedState`.
+On load, if the in-memory manager has no groups, the sidecar is applied via `ApplyPersistedState` (after `LayoutSanitizer.PruneLayoutData` on deserialized sidecar data).
+
+### Mod-removal resilience
+
+| Concern | Handling |
+|---------|----------|
+| **Other mod removes WorkGivers** | `Patch_WorkPriority_ExposeData` silently skips missing defs in Work Tab pawn priority XML. `LayoutSanitizer` prunes missing/invalid WorkGivers from custom groups and removes empty groups. |
+| **Other mod removes WorkTypes** | `LayoutSanitizer` + `LayoutOrderUtility.SyncWorkTypesInLayoutOrder` drop missing work types from `workLayoutOrder`. |
+| **Disabling Work Tab Groups** | Layout lives in sidecar (not `.rws`); implied group columns are runtime-only. `PrepareForModRemoval()` unassigns WorkGivers, restores vanilla column layout, deletes sidecar. Loading without Prepare is usually safe; Prepare + save is recommended. |
+| **Invalid WorkGiver mapping** | `LayoutSanitizer` removes assigned names when the def, its `workType`, or the `WorkTypeDef` is missing. |
+
+`LayoutSanitizer` runs in `RebuildRuntimeState`, before column injection, on sidecar load, and in `PrepareForModRemoval`.
 
 ### Migration
 
@@ -160,6 +171,7 @@ Source/
 ├── WorkTabGroupsSaveTracker.cs   # Tracks current save filename
 ├── LayoutOrderUtility.cs         # Default order, unassigned WorkGivers, sync
 ├── LayoutOrderMigration.cs       # Anchor → layout order migration
+├── LayoutSanitizer.cs            # Prune missing WorkGivers/WorkTypes, empty groups
 ├── PresetApplier.cs
 ├── AnchorKeys.cs                 # Legacy anchor parsing (migration)
 ├── WorkGiverGroupLinks.cs        # WorkGiver → custom group worker map
@@ -182,6 +194,7 @@ Source/
 │   ├── Patch_WorkGiver_VisibleCurrently.cs
 │   ├── Patch_WorkTab_Expand.cs
 │   ├── Patch_PriorityTracker_WorkTypeScope.cs
+│   ├── Patch_WorkPriority_ExposeData.cs  # Silent load when WorkGiver mod removed
 │   ├── Patch_SaveLoadSidecar.cs
 │   └── Patch_Game_ComponentRegistration.cs
 └── UI/
@@ -224,6 +237,7 @@ Harmony id: `philip2p2026.worktabgroups`.
 | `Patch_WorkGiver_VisibleCurrently` | `PawnColumnWorker_WorkGiver.VisibleCurrently` | Grouped WorkGivers follow parent group expand state |
 | `Patch_WorkTab_Expand` | `MainTabWindow_WorkTab.Expand` | Allow collapse when `CanExpand` is false |
 | `Patch_PriorityTracker_*` | `PriorityTracker` WorkType scope | WorkType bulk priority skips WorkGivers in custom groups |
+| `Patch_WorkPriority_ExposeData` | `WorkPriority.ExposeData` | Load WorkGiver def names via `GetNamedSilentFail` (no error spam when other mods removed) |
 | `Patch_Game_*` / `Patch_GameDataSaveLoader_*` | Game lifecycle, save/load | Component registration, sidecar I/O, strip manager from main save |
 | `Patch_Game_ExposeData` | `Game.ExposeData` | Sidecar persistence hook |
 

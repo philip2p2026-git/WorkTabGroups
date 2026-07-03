@@ -75,6 +75,19 @@ namespace WorkTabGroups
                 return;
             }
 
+            if (data.workLayoutOrder == null)
+            {
+                data.workLayoutOrder = new List<WorkLayoutEntry>();
+            }
+
+            LayoutSanitizer.PruneLayoutData(data.groups, data.workLayoutOrder);
+
+            if (data.groups.Count == 0)
+            {
+                DeleteForSave(saveName);
+                return;
+            }
+
             WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
             manager.ApplyPersistedState(data.groups, data.workLayoutOrder, data.nextGroupId);
         }

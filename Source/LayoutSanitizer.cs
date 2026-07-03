@@ -14,17 +14,68 @@ namespace WorkTabGroups
                 return;
             }
 
-            int prunedWorkGivers = PruneMissingWorkGivers(manager.Groups);
-            int prunedLayoutEntries = PruneInvalidLayoutEntries(manager.WorkLayoutOrderMutable, manager.GetGroup);
+            PruneLayoutData(manager.GroupsMutable, manager.WorkLayoutOrderMutable);
+        }
 
-            if (Prefs.DevMode && (prunedWorkGivers > 0 || prunedLayoutEntries > 0))
+        public static void PruneLayoutData(List<MajorWorkGroupData> groups, List<WorkLayoutEntry> layoutOrder)
+        {
+            if (groups == null)
+            {
+                return;
+            }
+
+            int prunedWorkGivers = PruneInvalidWorkGivers(groups);
+            int prunedEmptyGroups = PruneEmptyGroups(groups, layoutOrder);
+            int prunedLayoutEntries = PruneInvalidLayoutEntries(layoutOrder, defName => FindGroup(groups, defName));
+
+            if (Prefs.DevMode && (prunedWorkGivers > 0 || prunedEmptyGroups > 0 || prunedLayoutEntries > 0))
             {
                 Log.Message(
-                    $"[WorkTabGroups] Pruned invalid references: {prunedWorkGivers} WorkGiver(s), {prunedLayoutEntries} layout entry(ies).");
+                    $"[WorkTabGroups] Pruned invalid references: {prunedWorkGivers} WorkGiver(s), " +
+                    $"{prunedEmptyGroups} empty group(s), {prunedLayoutEntries} layout entry(ies).");
             }
         }
 
-        private static int PruneMissingWorkGivers(IEnumerable<MajorWorkGroupData> groups)
+        private static MajorWorkGroupData FindGroup(List<MajorWorkGroupData> groups, string defName)
+        {
+            if (groups == null || defName.NullOrEmpty())
+            {
+                return null;
+            }
+
+            foreach (MajorWorkGroupData group in groups)
+            {
+                if (group?.defName == defName)
+                {
+                    return group;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsResolvableWorkGiver(string wgName)
+        {
+            if (wgName.NullOrEmpty())
+            {
+                return false;
+            }
+
+            WorkGiverDef wg = DefDatabase<WorkGiverDef>.GetNamedSilentFail(wgName);
+            if (wg == null)
+            {
+                return false;
+            }
+
+            if (wg.workType == null)
+            {
+                return false;
+            }
+
+            return DefDatabase<WorkTypeDef>.GetNamedSilentFail(wg.workType.defName) != null;
+        }
+
+        private static int PruneInvalidWorkGivers(IEnumerable<MajorWorkGroupData> groups)
         {
             int pruned = 0;
             if (groups == null)
@@ -41,8 +92,7 @@ namespace WorkTabGroups
 
                 for (int i = group.assignedWorkGiverDefNames.Count - 1; i >= 0; i--)
                 {
-                    string wgName = group.assignedWorkGiverDefNames[i];
-                    if (DefDatabase<WorkGiverDef>.GetNamedSilentFail(wgName) == null)
+                    if (!IsResolvableWorkGiver(group.assignedWorkGiverDefNames[i]))
                     {
                         group.assignedWorkGiverDefNames.RemoveAt(i);
                         pruned++;
@@ -51,6 +101,38 @@ namespace WorkTabGroups
             }
 
             return pruned;
+        }
+
+        private static int PruneEmptyGroups(List<MajorWorkGroupData> groups, List<WorkLayoutEntry> layoutOrder)
+        {
+            if (groups == null || groups.Count == 0)
+            {
+                return 0;
+            }
+
+            var emptyDefNames = new HashSet<string>();
+            foreach (MajorWorkGroupData group in groups)
+            {
+                if (group?.assignedWorkGiverDefNames == null || group.assignedWorkGiverDefNames.Count == 0)
+                {
+                    emptyDefNames.Add(group.defName);
+                }
+            }
+
+            if (emptyDefNames.Count == 0)
+            {
+                return 0;
+            }
+
+            groups.RemoveAll(g => g != null && emptyDefNames.Contains(g.defName));
+
+            if (layoutOrder != null)
+            {
+                layoutOrder.RemoveAll(e =>
+                    e.kind == WorkLayoutEntryKind.CustomGroup && emptyDefNames.Contains(e.key));
+            }
+
+            return emptyDefNames.Count;
         }
 
         private static int PruneInvalidLayoutEntries(
