@@ -18,6 +18,9 @@ namespace WorkTabGroups
         private Dictionary<string, MajorWorkGroupDef> groupDefByName = new Dictionary<string, MajorWorkGroupDef>();
         private Dictionary<string, PawnColumnDef> columnDefByGroupName = new Dictionary<string, PawnColumnDef>();
         private Dictionary<WorkGiverDef, MajorWorkGroupData> workGiverToGroup = new Dictionary<WorkGiverDef, MajorWorkGroupData>();
+        private string loadedSidecarSaveName;
+        private string pendingLayoutChangeNotice;
+        private string pendingLayoutChangeNoticeTip;
 
         public static WorkTabGroupsManager Instance
         {
@@ -64,6 +67,66 @@ namespace WorkTabGroups
         internal List<MajorWorkGroupData> GroupsMutable => groups;
 
         internal int NextGroupId => nextGroupId;
+
+        internal bool IsSidecarLoadedForSave(string saveName)
+        {
+            return !saveName.NullOrEmpty() && loadedSidecarSaveName == saveName;
+        }
+
+        internal void MarkSidecarLoaded(string saveName)
+        {
+            loadedSidecarSaveName = saveName;
+        }
+
+        public bool HasPendingLayoutChangeNotice => !pendingLayoutChangeNotice.NullOrEmpty();
+
+        public string PendingLayoutChangeNotice => pendingLayoutChangeNotice;
+
+        public string PendingLayoutChangeNoticeTip => pendingLayoutChangeNoticeTip;
+
+        internal void SetPendingLayoutChangeNotice(LayoutPruneReport report)
+        {
+            if (report == null || !report.HasChanges)
+            {
+                return;
+            }
+
+            pendingLayoutChangeNotice = "WorkTabGroups.LayoutEditor.LayoutChangedWarning".Translate(
+                report.PrunedWorkGiverCount);
+            pendingLayoutChangeNoticeTip = BuildLayoutChangeNoticeTip(report);
+        }
+
+        public void ClearPendingLayoutChangeNotice()
+        {
+            pendingLayoutChangeNotice = null;
+            pendingLayoutChangeNoticeTip = null;
+        }
+
+        private static string BuildLayoutChangeNoticeTip(LayoutPruneReport report)
+        {
+            if (report == null || !report.HasChanges)
+            {
+                return null;
+            }
+
+            var lines = new List<string>
+            {
+                "WorkTabGroups.LayoutEditor.LayoutChangedWarningTip".Translate()
+            };
+
+            foreach (string groupLabel in report.AffectedGroupLabels)
+            {
+                lines.Add("WorkTabGroups.LayoutEditor.LayoutChangedGroup".Translate(groupLabel));
+            }
+
+            if (report.PrunedLayoutEntryCount > 0)
+            {
+                lines.Add("WorkTabGroups.LayoutEditor.LayoutChangedLayoutEntries".Translate(
+                    report.PrunedLayoutEntryCount));
+            }
+
+            return string.Join("\n", lines);
+        }
 
         public WorkTabGroupsManager(Game game)
         {

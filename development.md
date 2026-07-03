@@ -124,7 +124,7 @@ On load, if the in-memory manager has no groups, the sidecar is applied via `App
 
 | Concern | Handling |
 |---------|----------|
-| **Other mod removes WorkGivers** | `Patch_WorkPriority_ExposeData` silently skips missing defs in Work Tab pawn priority XML. `LayoutSanitizer` prunes missing/invalid WorkGivers from custom groups and removes empty groups. |
+| **Other mod removes WorkGivers** | `Patch_WorkPriority_ExposeData` silently skips missing defs in Work Tab pawn priority XML. `LayoutSanitizer` prunes missing/invalid WorkGivers from custom groups; custom group shells are kept even when empty. |
 | **Other mod removes WorkTypes** | `LayoutSanitizer` + `LayoutOrderUtility.SyncWorkTypesInLayoutOrder` drop missing work types from `workLayoutOrder`. |
 | **Disabling Work Tab Groups** | Layout lives in sidecar (not `.rws`); implied group columns are runtime-only. `PrepareForModRemoval()` unassigns WorkGivers, restores vanilla column layout, deletes sidecar. Loading without Prepare is usually safe; Prepare + save is recommended. |
 | **Invalid WorkGiver mapping** | `LayoutSanitizer` removes assigned names when the def, its `workType`, or the `WorkTypeDef` is missing. |
@@ -171,7 +171,7 @@ Source/
 ├── WorkTabGroupsSaveTracker.cs   # Tracks current save filename
 ├── LayoutOrderUtility.cs         # Default order, unassigned WorkGivers, sync
 ├── LayoutOrderMigration.cs       # Anchor → layout order migration
-├── LayoutSanitizer.cs            # Prune missing WorkGivers/WorkTypes, empty groups
+├── LayoutSanitizer.cs            # Prune missing WorkGivers/WorkTypes from layout data
 ├── PresetApplier.cs
 ├── AnchorKeys.cs                 # Legacy anchor parsing (migration)
 ├── WorkGiverGroupLinks.cs        # WorkGiver → custom group worker map

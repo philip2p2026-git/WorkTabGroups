@@ -6,6 +6,10 @@
 	<WorkTabGroups.LayoutEditor.AddGroup>Add group</WorkTabGroups.LayoutEditor.AddGroup>
 	<WorkTabGroups.LayoutEditor.LoadPreset>Load preset</WorkTabGroups.LayoutEditor.LoadPreset>
 	<WorkTabGroups.LayoutEditor.ApplyTip>Apply layout changes to the Work Tab.</WorkTabGroups.LayoutEditor.ApplyTip>
+	<WorkTabGroups.LayoutEditor.LayoutChangedWarning>Custom groups changed: {0} WorkGiver assignment(s) removed (missing mods or work types).</WorkTabGroups.LayoutEditor.LayoutChangedWarning>
+	<WorkTabGroups.LayoutEditor.LayoutChangedWarningTip>Some WorkGivers or work types in your saved layout are no longer available. Review custom groups before clicking Apply.</WorkTabGroups.LayoutEditor.LayoutChangedWarningTip>
+	<WorkTabGroups.LayoutEditor.LayoutChangedGroup>Affected group: {0}</WorkTabGroups.LayoutEditor.LayoutChangedGroup>
+	<WorkTabGroups.LayoutEditor.LayoutChangedLayoutEntries>{0} layout entry(ies) removed for missing work types or groups.</WorkTabGroups.LayoutEditor.LayoutChangedLayoutEntries>
 	<WorkTabGroups.LayoutEditor.NoPresets>No saved layout presets.</WorkTabGroups.LayoutEditor.NoPresets>
 	<WorkTabGroups.LayoutEditor.NoGame>Load a colony to edit the work layout.</WorkTabGroups.LayoutEditor.NoGame>
 	<WorkTabGroups.LayoutEditor.CustomGroup>custom group</WorkTabGroups.LayoutEditor.CustomGroup>

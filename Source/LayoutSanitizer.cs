@@ -19,20 +19,30 @@ namespace WorkTabGroups
 
         public static void PruneLayoutData(List<MajorWorkGroupData> groups, List<WorkLayoutEntry> layoutOrder)
         {
+            PruneLayoutDataWithReport(groups, layoutOrder);
+        }
+
+        public static LayoutPruneReport PruneLayoutDataWithReport(
+            List<MajorWorkGroupData> groups,
+            List<WorkLayoutEntry> layoutOrder)
+        {
+            var report = new LayoutPruneReport();
             if (groups == null)
             {
-                return;
+                return report;
             }
 
-            int prunedWorkGivers = PruneInvalidWorkGivers(groups);
-            int prunedLayoutEntries = PruneInvalidLayoutEntries(layoutOrder, defName => FindGroup(groups, defName));
+            report.PrunedWorkGiverCount = PruneInvalidWorkGivers(groups, report);
+            report.PrunedLayoutEntryCount = PruneInvalidLayoutEntries(layoutOrder, defName => FindGroup(groups, defName));
 
-            if (Prefs.DevMode && (prunedWorkGivers > 0 || prunedLayoutEntries > 0))
+            if (Prefs.DevMode && report.HasChanges)
             {
                 Log.Message(
-                    $"[WorkTabGroups] Pruned invalid references: {prunedWorkGivers} WorkGiver(s), " +
-                    $"{prunedLayoutEntries} layout entry(ies).");
+                    $"[WorkTabGroups] Pruned invalid references: {report.PrunedWorkGiverCount} WorkGiver(s), " +
+                    $"{report.PrunedLayoutEntryCount} layout entry(ies).");
             }
+
+            return report;
         }
 
         private static MajorWorkGroupData FindGroup(List<MajorWorkGroupData> groups, string defName)
@@ -74,7 +84,7 @@ namespace WorkTabGroups
             return DefDatabase<WorkTypeDef>.GetNamedSilentFail(wg.workType.defName) != null;
         }
 
-        private static int PruneInvalidWorkGivers(IEnumerable<MajorWorkGroupData> groups)
+        private static int PruneInvalidWorkGivers(IEnumerable<MajorWorkGroupData> groups, LayoutPruneReport report = null)
         {
             int pruned = 0;
             if (groups == null)
@@ -91,10 +101,19 @@ namespace WorkTabGroups
 
                 for (int i = group.assignedWorkGiverDefNames.Count - 1; i >= 0; i--)
                 {
-                    if (!IsResolvableWorkGiver(group.assignedWorkGiverDefNames[i]))
+                    string wgName = group.assignedWorkGiverDefNames[i];
+                    if (!IsResolvableWorkGiver(wgName))
                     {
                         group.assignedWorkGiverDefNames.RemoveAt(i);
                         pruned++;
+                        if (report != null)
+                        {
+                            report.RemovedWorkGiverDefNames.Add(wgName);
+                            if (!group.label.NullOrEmpty() && !report.AffectedGroupLabels.Contains(group.label))
+                            {
+                                report.AffectedGroupLabels.Add(group.label);
+                            }
+                        }
                     }
                 }
             }

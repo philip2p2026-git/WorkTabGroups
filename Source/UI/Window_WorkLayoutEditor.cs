@@ -12,6 +12,7 @@ namespace WorkTabGroups
         private const float DragHandleWidth = 18f;
         private const float ToolbarHeight = 36f;
         private const float DropLineHeight = 4f;
+        private const float WarningMaxWidth = 360f;
 
         private LayoutEditorDraft draft;
         private Vector2 scrollPosition;
@@ -37,8 +38,7 @@ namespace WorkTabGroups
         public override void PreOpen()
         {
             base.PreOpen();
-            draft = LayoutEditorDraft.FromDisplayedColumns()
-                    ?? LayoutEditorDraft.FromManager(WorkTabGroupsManager.EnsureRegistered());
+            draft = LayoutEditorDraft.ForEditorOpen(WorkTabGroupsManager.EnsureRegistered());
         }
 
         public override void DoWindowContents(Rect inRect)
@@ -50,14 +50,25 @@ namespace WorkTabGroups
             }
 
             draft.EnsureWorkLayoutOrder();
+            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
+
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 30f), "WorkTabGroups.LayoutEditor.Title".Translate());
             Text.Font = GameFont.Small;
 
-            Rect toolbarRect = new Rect(0f, 34f, inRect.width, ToolbarHeight);
+            float y = 34f;
+            float warningHeight = GetWarningHeight(manager);
+            if (warningHeight > 0f)
+            {
+                Rect warningRect = new Rect(0f, y, WarningMaxWidth, warningHeight);
+                DrawLayoutChangeWarning(warningRect, manager);
+                y += warningHeight + 4f;
+            }
+
+            Rect toolbarRect = new Rect(0f, y, inRect.width, ToolbarHeight);
             DrawToolbar(toolbarRect);
 
-            Rect listRect = new Rect(0f, 34f + ToolbarHeight + 6f, inRect.width, inRect.height - 40f - ToolbarHeight);
+            Rect listRect = new Rect(0f, y + ToolbarHeight + 6f, inRect.width, inRect.height - y - ToolbarHeight - 6f);
             DrawLayoutList(listRect);
 
             if (LayoutDragDropState.IsDragging)
@@ -106,6 +117,40 @@ namespace WorkTabGroups
             TooltipHandler.TipRegion(applyRect, "WorkTabGroups.LayoutEditor.ApplyTip".Translate());
         }
 
+        private static float GetWarningHeight(WorkTabGroupsManager manager)
+        {
+            if (manager == null || !manager.HasPendingLayoutChangeNotice)
+            {
+                return 0f;
+            }
+
+            Text.Font = GameFont.Tiny;
+            float height = Text.CalcHeight(manager.PendingLayoutChangeNotice, WarningMaxWidth - 12f) + 10f;
+            Text.Font = GameFont.Small;
+            return Mathf.Max(height, 24f);
+        }
+
+        private static void DrawLayoutChangeWarning(Rect rect, WorkTabGroupsManager manager)
+        {
+            if (manager == null || !manager.HasPendingLayoutChangeNotice)
+            {
+                return;
+            }
+
+            Color previousColor = GUI.color;
+            Widgets.DrawBoxSolid(rect, new Color(0.35f, 0.22f, 0.05f, 0.92f));
+            GUI.color = new Color(1f, 0.88f, 0.45f);
+            Text.Font = GameFont.Tiny;
+            Widgets.Label(rect.ContractedBy(6f), manager.PendingLayoutChangeNotice);
+            Text.Font = GameFont.Small;
+            GUI.color = previousColor;
+
+            if (!manager.PendingLayoutChangeNoticeTip.NullOrEmpty())
+            {
+                TooltipHandler.TipRegion(rect, manager.PendingLayoutChangeNoticeTip);
+            }
+        }
+
         private void ApplyDraft()
         {
             WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
@@ -115,6 +160,7 @@ namespace WorkTabGroups
             }
 
             manager.CommitLayoutDraft(draft);
+            manager.ClearPendingLayoutChangeNotice();
             draft = LayoutEditorDraft.FromManager(manager) ?? draft;
         }
 

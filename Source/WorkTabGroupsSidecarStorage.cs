@@ -47,14 +47,13 @@ namespace WorkTabGroups
                 return;
             }
 
-            WorkTabGroupsManager existing = WorkTabGroupsManager.Instance;
-            if (existing != null && existing.Groups.Count > 0)
+            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
+            if (manager == null)
             {
                 return;
             }
 
-            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
-            if (manager == null)
+            if (manager.IsSidecarLoadedForSave(saveName))
             {
                 return;
             }
@@ -62,6 +61,12 @@ namespace WorkTabGroups
             string path = GetPath(saveName);
             if (!File.Exists(path))
             {
+                if (manager.Groups.Count > 0)
+                {
+                    manager.ClearAllGroups();
+                }
+
+                manager.MarkSidecarLoaded(saveName);
                 LongEventHandler.ExecuteWhenFinished(WorkTabGroupsManager.RequestColumnRebuild);
                 return;
             }
@@ -79,6 +84,12 @@ namespace WorkTabGroups
 
             if (data?.groups == null || data.groups.Count == 0)
             {
+                if (manager.Groups.Count > 0)
+                {
+                    manager.ClearAllGroups();
+                }
+
+                manager.MarkSidecarLoaded(saveName);
                 LongEventHandler.ExecuteWhenFinished(WorkTabGroupsManager.RequestColumnRebuild);
                 return;
             }
@@ -88,16 +99,30 @@ namespace WorkTabGroups
                 data.workLayoutOrder = new List<WorkLayoutEntry>();
             }
 
-            LayoutSanitizer.PruneLayoutData(data.groups, data.workLayoutOrder);
+            LayoutPruneReport pruneReport = LayoutSanitizer.PruneLayoutDataWithReport(data.groups, data.workLayoutOrder);
 
             if (data.groups.Count == 0)
             {
                 DeleteForSave(saveName);
+                if (manager.Groups.Count > 0)
+                {
+                    manager.ClearAllGroups();
+                }
+
+                manager.MarkSidecarLoaded(saveName);
                 LongEventHandler.ExecuteWhenFinished(WorkTabGroupsManager.RequestColumnRebuild);
                 return;
             }
 
             manager.ApplyPersistedState(data.groups, data.workLayoutOrder, data.nextGroupId);
+            manager.MarkSidecarLoaded(saveName);
+            if (pruneReport.HasChanges)
+            {
+                manager.SetPendingLayoutChangeNotice(pruneReport);
+            }
+
+            LayoutSanitizer.PruneInvalidReferences(manager);
+            Save(manager);
         }
 
         public static void DeleteForCurrentSave()

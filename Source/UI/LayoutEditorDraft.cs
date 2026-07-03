@@ -57,6 +57,77 @@ namespace WorkTabGroups
             return draft;
         }
 
+        public static LayoutEditorDraft ForEditorOpen(WorkTabGroupsManager manager)
+        {
+            LayoutEditorDraft draft = FromManager(manager);
+            if (draft == null)
+            {
+                return FromDisplayedColumns();
+            }
+
+            CapturedLayoutData captured = LayoutOrderUtility.CaptureFromDisplayedColumns();
+            if (captured != null)
+            {
+                draft.ReconcileFromCapture(captured);
+            }
+
+            return draft;
+        }
+
+        private void ReconcileFromCapture(CapturedLayoutData captured)
+        {
+            if (captured == null)
+            {
+                return;
+            }
+
+            foreach (MajorWorkGroupData capturedGroup in captured.groups)
+            {
+                if (capturedGroup == null || capturedGroup.defName.NullOrEmpty())
+                {
+                    continue;
+                }
+
+                if (GetGroup(capturedGroup.defName) != null)
+                {
+                    continue;
+                }
+
+                groups.Add(LayoutOrderUtility.CloneGroup(capturedGroup));
+            }
+
+            if (groups.Count > 0)
+            {
+                nextGroupId = Math.Max(nextGroupId, LayoutOrderUtility.ComputeNextGroupId(groups));
+            }
+
+            for (int i = 0; i < captured.workLayoutOrder.Count; i++)
+            {
+                WorkLayoutEntry entry = captured.workLayoutOrder[i];
+                if (entry.kind != WorkLayoutEntryKind.CustomGroup || entry.key.NullOrEmpty())
+                {
+                    continue;
+                }
+
+                if (GetGroup(entry.key) == null)
+                {
+                    continue;
+                }
+
+                if (workLayoutOrder.Any(e =>
+                        e.kind == WorkLayoutEntryKind.CustomGroup && e.key == entry.key))
+                {
+                    continue;
+                }
+
+                int insertIndex = UnityEngine.Mathf.Clamp(i, 0, workLayoutOrder.Count);
+                workLayoutOrder.Insert(insertIndex, WorkLayoutEntry.ForCustomGroup(entry.key));
+            }
+
+            EnsureWorkLayoutOrder();
+            RebuildAssignmentMap();
+        }
+
         public void EnsureWorkLayoutOrder()
         {
             List<string> nativeOrder = LayoutOrderUtility.GetNativeWorkTypeOrder();

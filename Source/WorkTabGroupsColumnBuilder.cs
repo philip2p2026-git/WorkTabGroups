@@ -300,6 +300,12 @@ namespace WorkTabGroups
                     PawnColumnDef groupCol = manager.GetColumnDefForGroup(group);
                     if (groupCol == null)
                     {
+                        if (Prefs.DevMode)
+                        {
+                            Log.Warning(
+                                $"[WorkTabGroups] Inject skipped custom group column for {group.defName} ({group.label}).");
+                        }
+
                         continue;
                     }
 
