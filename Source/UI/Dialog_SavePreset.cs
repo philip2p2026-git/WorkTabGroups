@@ -70,12 +70,14 @@ namespace WorkTabGroups
 
     public class Dialog_SaveLayoutPreset : Window
     {
+        private readonly LayoutEditorDraft draft;
         private string presetName;
 
         public override Vector2 InitialSize => new Vector2(400f, 180f);
 
-        public Dialog_SaveLayoutPreset()
+        public Dialog_SaveLayoutPreset(LayoutEditorDraft draft)
         {
+            this.draft = draft;
             doCloseButton = false;
             doCloseX = true;
             closeOnClickedOutside = true;
@@ -111,14 +113,13 @@ namespace WorkTabGroups
                 return;
             }
 
-            WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
             WorkTabGroupsSettings settings = WorkTabGroupsMod.Settings;
-            if (manager == null || settings == null)
+            if (draft == null || settings == null)
             {
                 return;
             }
 
-            string error = settings.SaveLayoutPreset(presetName.Trim(), manager);
+            string error = settings.SaveLayoutPreset(presetName.Trim(), draft);
             if (error != null)
             {
                 Messages.Message(error, MessageTypeDefOf.RejectInput, false);

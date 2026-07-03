@@ -6,15 +6,17 @@ namespace WorkTabGroups
 {
     public class Dialog_RenameMajorWorkGroup : Window
     {
+        private readonly LayoutEditorDraft draft;
         private readonly string groupDefName;
         private string newName;
 
         public override Vector2 InitialSize => new Vector2(400f, 180f);
 
-        public Dialog_RenameMajorWorkGroup(string groupDefName)
+        public Dialog_RenameMajorWorkGroup(LayoutEditorDraft draft, string groupDefName)
         {
+            this.draft = draft;
             this.groupDefName = groupDefName;
-            MajorWorkGroupData group = WorkTabGroupsManager.Instance?.GetGroup(groupDefName);
+            MajorWorkGroupData group = draft?.GetGroup(groupDefName);
             newName = group?.label ?? string.Empty;
             doCloseButton = false;
             doCloseX = true;
@@ -45,7 +47,12 @@ namespace WorkTabGroups
 
         private void TryConfirm()
         {
-            string error = WorkTabGroupsManager.Instance?.RenameGroup(groupDefName, newName);
+            if (draft == null)
+            {
+                return;
+            }
+
+            string error = draft.RenameGroup(groupDefName, newName);
             if (error != null)
             {
                 Messages.Message(error, MessageTypeDefOf.RejectInput, false);

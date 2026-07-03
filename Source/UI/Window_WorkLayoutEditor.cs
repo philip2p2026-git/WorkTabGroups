@@ -13,6 +13,7 @@ namespace WorkTabGroups
         private const float ToolbarHeight = 36f;
         private const float DropLineHeight = 4f;
 
+        private LayoutEditorDraft draft;
         private Vector2 scrollPosition;
         private string selectedGroupDefName;
         private readonly HashSet<string> expandedWorkTypes = new HashSet<string>();
@@ -33,25 +34,31 @@ namespace WorkTabGroups
             resizeable = true;
         }
 
+        public override void PreOpen()
+        {
+            base.PreOpen();
+            draft = LayoutEditorDraft.FromDisplayedColumns()
+                    ?? LayoutEditorDraft.FromManager(WorkTabGroupsManager.EnsureRegistered());
+        }
+
         public override void DoWindowContents(Rect inRect)
         {
-            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
-            if (manager == null)
+            if (draft == null)
             {
                 Widgets.Label(inRect, "WorkTabGroups.LayoutEditor.NoGame".Translate());
                 return;
             }
 
-            manager.EnsureWorkLayoutOrder();
+            draft.EnsureWorkLayoutOrder();
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(0f, 0f, inRect.width, 30f), "WorkTabGroups.LayoutEditor.Title".Translate());
             Text.Font = GameFont.Small;
 
             Rect toolbarRect = new Rect(0f, 34f, inRect.width, ToolbarHeight);
-            DrawToolbar(toolbarRect, manager);
+            DrawToolbar(toolbarRect);
 
             Rect listRect = new Rect(0f, 34f + ToolbarHeight + 6f, inRect.width, inRect.height - 40f - ToolbarHeight);
-            DrawLayoutList(listRect, manager);
+            DrawLayoutList(listRect);
 
             if (LayoutDragDropState.IsDragging)
             {
@@ -62,12 +69,12 @@ namespace WorkTabGroups
 
                 if (Event.current.rawType == EventType.MouseUp && Event.current.button == 0)
                 {
-                    TryCompleteDrag(manager);
+                    TryCompleteDrag();
                 }
             }
         }
 
-        private void DrawToolbar(Rect rect, WorkTabGroupsManager manager)
+        private void DrawToolbar(Rect rect)
         {
             float x = rect.x;
             float y = rect.y;
@@ -75,13 +82,13 @@ namespace WorkTabGroups
 
             if (Widgets.ButtonText(new Rect(x, y, buttonWidth, 28f), "WorkTabGroups.LayoutEditor.AddGroup".Translate()))
             {
-                Find.WindowStack.Add(new Dialog_AddMajorWorkGroup(GetInsertIndexForNewGroup()));
+                Find.WindowStack.Add(new Dialog_AddMajorWorkGroup(draft, GetInsertIndexForNewGroup()));
             }
 
             x += buttonWidth + 4f;
             if (Widgets.ButtonText(new Rect(x, y, buttonWidth, 28f), "WorkTabGroups.Save".Translate()))
             {
-                Find.WindowStack.Add(new Dialog_SaveLayoutPreset());
+                Find.WindowStack.Add(new Dialog_SaveLayoutPreset(draft));
             }
 
             x += buttonWidth + 4f;
@@ -89,6 +96,26 @@ namespace WorkTabGroups
             {
                 OpenLoadPresetMenu();
             }
+
+            Rect applyRect = new Rect(rect.xMax - buttonWidth, y, buttonWidth, 28f);
+            if (Widgets.ButtonText(applyRect, "WorkTabGroups.Apply".Translate()))
+            {
+                ApplyDraft();
+            }
+
+            TooltipHandler.TipRegion(applyRect, "WorkTabGroups.LayoutEditor.ApplyTip".Translate());
+        }
+
+        private void ApplyDraft()
+        {
+            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
+            if (manager == null || draft == null)
+            {
+                return;
+            }
+
+            manager.CommitLayoutDraft(draft);
+            draft = LayoutEditorDraft.FromManager(manager) ?? draft;
         }
 
         private static int GetInsertIndexForNewGroup()
@@ -108,7 +135,7 @@ namespace WorkTabGroups
             foreach (LayoutPreset preset in settings.layoutPresets)
             {
                 LayoutPreset captured = preset;
-                options.Add(new FloatMenuOption(captured.presetName, () => PresetApplier.ApplyLayout(captured)));
+                options.Add(new FloatMenuOption(captured.presetName, () => draft.ReplaceFromPreset(captured)));
             }
 
             if (options.Count == 0)
@@ -120,10 +147,10 @@ namespace WorkTabGroups
             Find.WindowStack.Add(new FloatMenu(options));
         }
 
-        private void DrawLayoutList(Rect rect, WorkTabGroupsManager manager)
+        private void DrawLayoutList(Rect rect)
         {
             float contentHeight = 0f;
-            IReadOnlyList<WorkLayoutEntry> layoutOrder = manager.WorkLayoutOrder;
+            IReadOnlyList<WorkLayoutEntry> layoutOrder = draft.WorkLayoutOrder;
             for (int i = 0; i < layoutOrder.Count; i++)
             {
                 contentHeight += RowHeight;
@@ -131,11 +158,12 @@ namespace WorkTabGroups
                 if (entry.kind == WorkLayoutEntryKind.WorkType && expandedWorkTypes.Contains(entry.key))
                 {
                     WorkTypeDef workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.key);
-                    contentHeight += LayoutOrderUtility.GetUnassignedWorkGivers(workType, manager).Count * RowHeight;
+                    contentHeight += LayoutOrderUtility.GetUnassignedWorkGivers(
+                        workType, draft.IsAssignedToCustomGroup).Count * RowHeight;
                 }
                 else if (entry.kind == WorkLayoutEntryKind.CustomGroup)
                 {
-                    MajorWorkGroupData group = manager.GetGroup(entry.key);
+                    MajorWorkGroupData group = draft.GetGroup(entry.key);
                     if (group?.expanded == true)
                     {
                         contentHeight += group.assignedWorkGiverDefNames.Count * RowHeight;
@@ -159,28 +187,29 @@ namespace WorkTabGroups
 
                 if (entry.kind == WorkLayoutEntryKind.WorkType)
                 {
-                    DrawWorkTypeRow(rowRect, entry.key, manager);
+                    DrawWorkTypeRow(rowRect, entry.key);
                     y += RowHeight;
                     if (expandedWorkTypes.Contains(entry.key))
                     {
                         WorkTypeDef workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.key);
-                        foreach (WorkGiverDef wg in LayoutOrderUtility.GetUnassignedWorkGivers(workType, manager))
+                        foreach (WorkGiverDef wg in LayoutOrderUtility.GetUnassignedWorkGivers(
+                                     workType, draft.IsAssignedToCustomGroup))
                         {
                             Rect wgRect = new Rect(Indent, y, viewRect.width - Indent, RowHeight);
-                            DrawWorkGiverRow(wgRect, wg, null, -1, manager);
+                            DrawWorkGiverRow(wgRect, wg, null, -1);
                             y += RowHeight;
                         }
                     }
                 }
                 else
                 {
-                    MajorWorkGroupData group = manager.GetGroup(entry.key);
+                    MajorWorkGroupData group = draft.GetGroup(entry.key);
                     if (group == null)
                     {
                         continue;
                     }
 
-                    DrawCustomGroupRow(rowRect, group, i, manager);
+                    DrawCustomGroupRow(rowRect, group, i);
                     y += RowHeight;
 
                     if (group.expanded)
@@ -194,7 +223,7 @@ namespace WorkTabGroups
                             }
 
                             Rect wgRect = new Rect(Indent, y, viewRect.width - Indent, RowHeight);
-                            DrawWorkGiverRow(wgRect, wg, group.defName, wgIndex, manager);
+                            DrawWorkGiverRow(wgRect, wg, group.defName, wgIndex);
                             y += RowHeight;
                         }
                     }
@@ -225,7 +254,7 @@ namespace WorkTabGroups
             }
         }
 
-        private void DrawWorkTypeRow(Rect rect, string workTypeDefName, WorkTabGroupsManager manager)
+        private void DrawWorkTypeRow(Rect rect, string workTypeDefName)
         {
             WorkTypeDef workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
             if (workType == null)
@@ -259,7 +288,7 @@ namespace WorkTabGroups
             TooltipHandler.TipRegion(rect, "WorkTabGroups.LayoutEditor.WorkTypeTip".Translate());
         }
 
-        private void DrawCustomGroupRow(Rect rect, MajorWorkGroupData group, int layoutIndex, WorkTabGroupsManager manager)
+        private void DrawCustomGroupRow(Rect rect, MajorWorkGroupData group, int layoutIndex)
         {
             Rect dragRect = new Rect(rect.x, rect.y, DragHandleWidth, rect.height);
             Rect bodyRect = new Rect(rect.x + DragHandleWidth, rect.y, rect.width - DragHandleWidth, rect.height);
@@ -275,7 +304,7 @@ namespace WorkTabGroups
 
             if (Event.current.type == EventType.MouseDown && Event.current.button == 1 && Mouse.IsOver(bodyRect))
             {
-                OpenCustomGroupContextMenu(group, manager);
+                OpenCustomGroupContextMenu(group);
                 Event.current.Use();
             }
 
@@ -317,8 +346,7 @@ namespace WorkTabGroups
             Rect rect,
             WorkGiverDef workGiver,
             string groupDefName,
-            int workGiverIndex,
-            WorkTabGroupsManager manager)
+            int workGiverIndex)
         {
             Rect dragRect = new Rect(rect.x, rect.y, DragHandleWidth, rect.height);
             Rect bodyRect = new Rect(rect.x + DragHandleWidth, rect.y, rect.width - DragHandleWidth, rect.height);
@@ -337,7 +365,7 @@ namespace WorkTabGroups
 
             if (Event.current.type == EventType.MouseDown && Event.current.button == 1 && Mouse.IsOver(bodyRect))
             {
-                OpenWorkGiverContextMenu(workGiver, groupDefName, manager);
+                OpenWorkGiverContextMenu(workGiver, groupDefName);
                 Event.current.Use();
             }
 
@@ -364,19 +392,19 @@ namespace WorkTabGroups
             TooltipHandler.TipRegion(bodyRect, "WorkTabGroups.LayoutEditor.WorkGiverTip".Translate());
         }
 
-        private void OpenCustomGroupContextMenu(MajorWorkGroupData group, WorkTabGroupsManager manager)
+        private void OpenCustomGroupContextMenu(MajorWorkGroupData group)
         {
             string defName = group.defName;
             var options = new List<FloatMenuOption>
             {
                 new FloatMenuOption("WorkTabGroups.RenameGroup".Translate(), () =>
-                    Find.WindowStack.Add(new Dialog_RenameMajorWorkGroup(defName))),
+                    Find.WindowStack.Add(new Dialog_RenameMajorWorkGroup(draft, defName))),
                 new FloatMenuOption("WorkTabGroups.DeleteGroup".Translate(), () =>
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                         "WorkTabGroups.ConfirmDeleteGroup".Translate(group.label),
                         () =>
                         {
-                            manager.DeleteGroup(defName);
+                            draft.DeleteGroup(defName);
                             if (selectedGroupDefName == defName)
                             {
                                 selectedGroupDefName = null;
@@ -386,10 +414,10 @@ namespace WorkTabGroups
             Find.WindowStack.Add(new FloatMenu(options));
         }
 
-        private void OpenWorkGiverContextMenu(WorkGiverDef workGiver, string currentGroupDefName, WorkTabGroupsManager manager)
+        private void OpenWorkGiverContextMenu(WorkGiverDef workGiver, string currentGroupDefName)
         {
             var options = new List<FloatMenuOption>();
-            List<MajorWorkGroupData> groups = GetCustomGroupsInLayout(manager);
+            List<MajorWorkGroupData> groups = GetCustomGroupsInLayout();
 
             if (groups.Count == 0)
             {
@@ -407,7 +435,7 @@ namespace WorkTabGroups
                     MajorWorkGroupData captured = group;
                     options.Add(new FloatMenuOption(
                         "WorkTabGroups.LayoutEditor.AssignToGroup".Translate(captured.label),
-                        () => manager.AssignWorkGiver(workGiver, captured.defName)));
+                        () => draft.AssignWorkGiver(workGiver, captured.defName)));
                 }
             }
 
@@ -415,7 +443,7 @@ namespace WorkTabGroups
             {
                 options.Add(new FloatMenuOption(
                     "WorkTabGroups.LayoutEditor.RemoveFromGroup".Translate(),
-                    () => manager.UnassignWorkGiver(workGiver)));
+                    () => draft.UnassignWorkGiver(workGiver)));
             }
 
             if (options.Count > 0)
@@ -424,17 +452,17 @@ namespace WorkTabGroups
             }
         }
 
-        private static List<MajorWorkGroupData> GetCustomGroupsInLayout(WorkTabGroupsManager manager)
+        private List<MajorWorkGroupData> GetCustomGroupsInLayout()
         {
             var groups = new List<MajorWorkGroupData>();
-            foreach (WorkLayoutEntry entry in manager.WorkLayoutOrder)
+            foreach (WorkLayoutEntry entry in draft.WorkLayoutOrder)
             {
                 if (entry.kind != WorkLayoutEntryKind.CustomGroup)
                 {
                     continue;
                 }
 
-                MajorWorkGroupData group = manager.GetGroup(entry.key);
+                MajorWorkGroupData group = draft.GetGroup(entry.key);
                 if (group != null)
                 {
                     groups.Add(group);
@@ -444,7 +472,7 @@ namespace WorkTabGroups
             return groups;
         }
 
-        private void TryCompleteDrag(WorkTabGroupsManager manager)
+        private void TryCompleteDrag()
         {
             if (!LayoutDragDropState.IsDragging)
             {
@@ -456,7 +484,7 @@ namespace WorkTabGroups
                 if (dropLayoutIndex >= 0 && dropLayoutIndex != LayoutDragDropState.SourceLayoutIndex &&
                     dropLayoutIndex != LayoutDragDropState.SourceLayoutIndex + 1)
                 {
-                    manager.MoveLayoutEntry(LayoutDragDropState.SourceLayoutIndex, dropLayoutIndex);
+                    draft.MoveLayoutEntry(LayoutDragDropState.SourceLayoutIndex, dropLayoutIndex);
                 }
             }
             else if (LayoutDragDropState.Kind == LayoutDragDropState.DragKind.WorkGiver)
@@ -470,10 +498,10 @@ namespace WorkTabGroups
                             LayoutDragDropState.SourceWorkGiverIndex >= 0 &&
                             dropWorkGiverIndex >= 0)
                         {
-                            MajorWorkGroupData group = manager.GetGroup(dropGroupDefName);
+                            MajorWorkGroupData group = draft.GetGroup(dropGroupDefName);
                             if (group != null)
                             {
-                                manager.MoveWorkGiverWithinGroup(
+                                draft.MoveWorkGiverWithinGroup(
                                     group,
                                     LayoutDragDropState.SourceWorkGiverIndex,
                                     dropWorkGiverIndex);
@@ -481,12 +509,12 @@ namespace WorkTabGroups
                         }
                         else
                         {
-                            manager.AssignWorkGiverAt(workGiver, dropGroupDefName, dropWorkGiverIndex);
+                            draft.AssignWorkGiverAt(workGiver, dropGroupDefName, dropWorkGiverIndex);
                         }
                     }
                     else if (!LayoutDragDropState.SourceGroupDefName.NullOrEmpty())
                     {
-                        manager.UnassignWorkGiver(workGiver);
+                        draft.UnassignWorkGiver(workGiver);
                     }
                 }
             }

@@ -34,12 +34,34 @@ namespace WorkTabGroups
 
         public string SaveLayoutPreset(string presetName, WorkTabGroupsManager manager)
         {
+            if (manager == null)
+            {
+                return null;
+            }
+
             if (FindLayoutPreset(presetName) != null)
             {
                 return "WorkTabGroups.Error.DuplicatePresetName".Translate(presetName);
             }
 
             layoutPresets.Add(manager.CaptureLayoutPreset(presetName));
+            Write();
+            return null;
+        }
+
+        public string SaveLayoutPreset(string presetName, LayoutEditorDraft draft)
+        {
+            if (draft == null)
+            {
+                return null;
+            }
+
+            if (FindLayoutPreset(presetName) != null)
+            {
+                return "WorkTabGroups.Error.DuplicatePresetName".Translate(presetName);
+            }
+
+            layoutPresets.Add(draft.CaptureLayoutPreset(presetName));
             Write();
             return null;
         }

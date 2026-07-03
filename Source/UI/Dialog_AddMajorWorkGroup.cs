@@ -6,13 +6,15 @@ namespace WorkTabGroups
 {
     public class Dialog_AddMajorWorkGroup : Window
     {
+        private readonly LayoutEditorDraft draft;
         private readonly int layoutIndex;
         private string groupName = string.Empty;
 
         public override Vector2 InitialSize => new Vector2(400f, 180f);
 
-        public Dialog_AddMajorWorkGroup(int layoutIndex)
+        public Dialog_AddMajorWorkGroup(LayoutEditorDraft draft, int layoutIndex)
         {
+            this.draft = draft;
             this.layoutIndex = layoutIndex;
             doCloseButton = false;
             doCloseX = true;
@@ -45,7 +47,12 @@ namespace WorkTabGroups
 
         private void TryConfirm()
         {
-            string error = WorkTabGroupsManager.Instance?.CreateGroup(groupName, layoutIndex);
+            if (draft == null)
+            {
+                return;
+            }
+
+            string error = draft.CreateGroup(groupName, layoutIndex);
             if (error != null)
             {
                 Messages.Message(error, MessageTypeDefOf.RejectInput, false);

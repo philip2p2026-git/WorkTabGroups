@@ -5,6 +5,7 @@
 	<WorkTabGroups.LayoutEditor.Title>Work layout editor</WorkTabGroups.LayoutEditor.Title>
 	<WorkTabGroups.LayoutEditor.AddGroup>Add group</WorkTabGroups.LayoutEditor.AddGroup>
 	<WorkTabGroups.LayoutEditor.LoadPreset>Load preset</WorkTabGroups.LayoutEditor.LoadPreset>
+	<WorkTabGroups.LayoutEditor.ApplyTip>Apply layout changes to the Work Tab.</WorkTabGroups.LayoutEditor.ApplyTip>
 	<WorkTabGroups.LayoutEditor.NoPresets>No saved layout presets.</WorkTabGroups.LayoutEditor.NoPresets>
 	<WorkTabGroups.LayoutEditor.NoGame>Load a colony to edit the work layout.</WorkTabGroups.LayoutEditor.NoGame>
 	<WorkTabGroups.LayoutEditor.CustomGroup>custom group</WorkTabGroups.LayoutEditor.CustomGroup>

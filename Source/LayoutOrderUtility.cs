@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
@@ -6,6 +7,13 @@ using WorkTab;
 
 namespace WorkTabGroups
 {
+    public class CapturedLayoutData
+    {
+        public List<MajorWorkGroupData> groups = new List<MajorWorkGroupData>();
+        public List<WorkLayoutEntry> workLayoutOrder = new List<WorkLayoutEntry>();
+        public int nextGroupId;
+    }
+
     public static class LayoutOrderUtility
     {
         public static List<string> GetNativeWorkTypeOrder()
@@ -58,6 +66,13 @@ namespace WorkTabGroups
 
         public static List<WorkGiverDef> GetUnassignedWorkGivers(WorkTypeDef workType, WorkTabGroupsManager manager)
         {
+            return GetUnassignedWorkGivers(workType, wg => manager != null && manager.IsAssignedToCustomGroup(wg));
+        }
+
+        public static List<WorkGiverDef> GetUnassignedWorkGivers(
+            WorkTypeDef workType,
+            Func<WorkGiverDef, bool> isAssignedToCustomGroup)
+        {
             var result = new List<WorkGiverDef>();
             if (workType?.workGiversByPriority == null)
             {
@@ -66,9 +81,137 @@ namespace WorkTabGroups
 
             foreach (WorkGiverDef wg in workType.workGiversByPriority.OrderByDescending(w => w.priorityInType))
             {
-                if (manager == null || !manager.IsAssignedToCustomGroup(wg))
+                if (isAssignedToCustomGroup == null || !isAssignedToCustomGroup(wg))
                 {
                     result.Add(wg);
+                }
+            }
+
+            return result;
+        }
+
+        public static CapturedLayoutData CaptureFromDisplayedColumns()
+        {
+            List<PawnColumnDef> columns = PawnTableDefOf.Work?.columns;
+            if (columns == null || columns.Count == 0)
+            {
+                return null;
+            }
+
+            var data = new CapturedLayoutData();
+            var groupsByDefName = new Dictionary<string, MajorWorkGroupData>();
+            MajorWorkGroupData currentGroup = null;
+            bool hasWorkColumns = false;
+
+            foreach (PawnColumnDef col in columns)
+            {
+                if (col.Worker is PawnColumnWorker_WorkType && col.workType != null)
+                {
+                    hasWorkColumns = true;
+                    currentGroup = null;
+                    data.workLayoutOrder.Add(WorkLayoutEntry.ForWorkType(col.workType.defName));
+                }
+                else if (col.Worker is PawnColumnWorker_MajorWorkGroup groupWorker)
+                {
+                    hasWorkColumns = true;
+                    MajorWorkGroupData groupData = ResolveGroupDataFromColumn(col, groupWorker);
+                    if (groupData == null)
+                    {
+                        continue;
+                    }
+
+                    if (!groupsByDefName.TryGetValue(groupData.defName, out MajorWorkGroupData tracked))
+                    {
+                        tracked = CloneGroup(groupData);
+                        tracked.assignedWorkGiverDefNames.Clear();
+                        groupsByDefName[tracked.defName] = tracked;
+                        data.groups.Add(tracked);
+                    }
+
+                    if (groupWorker.Expanded)
+                    {
+                        tracked.expanded = true;
+                    }
+
+                    currentGroup = tracked;
+                    if (!data.workLayoutOrder.Any(e =>
+                            e.kind == WorkLayoutEntryKind.CustomGroup && e.key == tracked.defName))
+                    {
+                        data.workLayoutOrder.Add(WorkLayoutEntry.ForCustomGroup(tracked.defName));
+                    }
+                }
+                else if (col.Worker is PawnColumnWorker_WorkGiver)
+                {
+                    hasWorkColumns = true;
+                    WorkGiverDef workGiver = GetWorkGiverFromColumn(col);
+                    if (workGiver == null)
+                    {
+                        continue;
+                    }
+
+                    if (currentGroup != null &&
+                        !currentGroup.assignedWorkGiverDefNames.Contains(workGiver.defName))
+                    {
+                        currentGroup.assignedWorkGiverDefNames.Add(workGiver.defName);
+                    }
+                }
+            }
+
+            if (!hasWorkColumns)
+            {
+                return null;
+            }
+
+            data.nextGroupId = ComputeNextGroupId(data.groups);
+            LayoutSanitizer.PruneLayoutData(data.groups, data.workLayoutOrder);
+            return data;
+        }
+
+        public static MajorWorkGroupData CloneGroup(MajorWorkGroupData source)
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+            var copy = new MajorWorkGroupData(source.defName, source.label, string.Empty)
+            {
+                expanded = source.expanded
+            };
+            copy.assignedWorkGiverDefNames.AddRange(source.assignedWorkGiverDefNames);
+            return copy;
+        }
+
+        public static List<WorkLayoutEntry> CloneWorkLayoutOrder(IEnumerable<WorkLayoutEntry> source)
+        {
+            var result = new List<WorkLayoutEntry>();
+            if (source == null)
+            {
+                return result;
+            }
+
+            foreach (WorkLayoutEntry entry in source)
+            {
+                result.Add(new WorkLayoutEntry(entry.kind, entry.key));
+            }
+
+            return result;
+        }
+
+        public static List<MajorWorkGroupData> CloneGroups(IEnumerable<MajorWorkGroupData> source)
+        {
+            var result = new List<MajorWorkGroupData>();
+            if (source == null)
+            {
+                return result;
+            }
+
+            foreach (MajorWorkGroupData group in source)
+            {
+                MajorWorkGroupData copy = CloneGroup(group);
+                if (copy != null)
+                {
+                    result.Add(copy);
                 }
             }
 
@@ -102,6 +245,17 @@ namespace WorkTabGroups
             List<string> nativeWorkTypeOrder,
             WorkTabGroupsManager manager = null)
         {
+            SyncWorkTypesInLayoutOrder(
+                layoutOrder,
+                nativeWorkTypeOrder,
+                manager?.Groups);
+        }
+
+        public static void SyncWorkTypesInLayoutOrder(
+            List<WorkLayoutEntry> layoutOrder,
+            List<string> nativeWorkTypeOrder,
+            IEnumerable<MajorWorkGroupData> groups)
+        {
             if (layoutOrder == null)
             {
                 return;
@@ -117,7 +271,7 @@ namespace WorkTabGroups
             }
 
             var groupDefNames = new HashSet<string>(
-                manager?.Groups.Select(g => g.defName) ?? Enumerable.Empty<string>());
+                groups?.Select(g => g.defName) ?? Enumerable.Empty<string>());
             layoutOrder.RemoveAll(e =>
                 e.kind == WorkLayoutEntryKind.CustomGroup &&
                 !groupDefNames.Contains(e.key));
@@ -153,6 +307,75 @@ namespace WorkTabGroups
 
                 layoutOrder.Insert(insertIndex, WorkLayoutEntry.ForWorkType(workTypeName));
             }
+
+            SyncCustomGroupsInLayoutOrder(layoutOrder, groupDefNames);
+        }
+
+        public static int ComputeNextGroupId(IEnumerable<MajorWorkGroupData> groups, int minimum = 0)
+        {
+            int max = minimum;
+            foreach (MajorWorkGroupData group in groups ?? Enumerable.Empty<MajorWorkGroupData>())
+            {
+                if (group?.defName != null && group.defName.StartsWith("MajorWorkGroup_") &&
+                    int.TryParse(group.defName.Substring("MajorWorkGroup_".Length), out int id))
+                {
+                    max = Math.Max(max, id + 1);
+                }
+            }
+
+            return max;
+        }
+
+        public static void SyncCustomGroupsInLayoutOrder(
+            List<WorkLayoutEntry> layoutOrder,
+            IEnumerable<MajorWorkGroupData> groups)
+        {
+            if (layoutOrder == null || groups == null)
+            {
+                return;
+            }
+
+            foreach (MajorWorkGroupData group in groups)
+            {
+                if (group == null || group.defName.NullOrEmpty())
+                {
+                    continue;
+                }
+
+                if (layoutOrder.Any(e =>
+                        e.kind == WorkLayoutEntryKind.CustomGroup && e.key == group.defName))
+                {
+                    continue;
+                }
+
+                layoutOrder.Insert(0, WorkLayoutEntry.ForCustomGroup(group.defName));
+            }
+        }
+
+        public static void SyncCustomGroupsInLayoutOrder(
+            List<WorkLayoutEntry> layoutOrder,
+            HashSet<string> groupDefNames)
+        {
+            if (layoutOrder == null || groupDefNames == null)
+            {
+                return;
+            }
+
+            foreach (string defName in groupDefNames)
+            {
+                if (defName.NullOrEmpty())
+                {
+                    continue;
+                }
+
+                if (layoutOrder.Any(e =>
+                        e.kind == WorkLayoutEntryKind.CustomGroup && e.key == defName))
+                {
+                    continue;
+                }
+
+                layoutOrder.Insert(0, WorkLayoutEntry.ForCustomGroup(defName));
+            }
         }
 
         private static bool WorkTypeDefExists(string workTypeDefName)
@@ -178,6 +401,28 @@ namespace WorkTabGroups
             }
 
             return result;
+        }
+
+        private static MajorWorkGroupData ResolveGroupDataFromColumn(
+            PawnColumnDef column,
+            PawnColumnWorker_MajorWorkGroup groupWorker)
+        {
+            if (column is PawnColumnDef_MajorWorkGroup majorCol && majorCol.majorWorkGroup?.data != null)
+            {
+                return majorCol.majorWorkGroup.data;
+            }
+
+            return groupWorker.BoundGroup;
+        }
+
+        private static WorkGiverDef GetWorkGiverFromColumn(PawnColumnDef column)
+        {
+            if (column is PawnColumnDef_WorkGiver workGiverCol)
+            {
+                return workGiverCol.workgiver;
+            }
+
+            return null;
         }
     }
 }

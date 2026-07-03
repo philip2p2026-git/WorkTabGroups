@@ -63,6 +63,8 @@ namespace WorkTabGroups
 
         internal List<MajorWorkGroupData> GroupsMutable => groups;
 
+        internal int NextGroupId => nextGroupId;
+
         public WorkTabGroupsManager(Game game)
         {
             instance = this;
@@ -609,6 +611,25 @@ namespace WorkTabGroups
             if (preset != null)
             {
                 PresetApplier.ApplyLayout(preset, this, skipConfirm: true);
+            }
+        }
+
+        public void CommitLayoutDraft(LayoutEditorDraft draft)
+        {
+            if (draft == null)
+            {
+                return;
+            }
+
+            List<MajorWorkGroupData> clonedGroups = draft.CloneGroupsForCommit();
+            List<WorkLayoutEntry> clonedOrder = draft.CloneWorkLayoutOrderForCommit();
+            ReplaceGroupsFromPreset(clonedGroups, clonedOrder);
+            nextGroupId = Math.Max(nextGroupId, draft.NextGroupId);
+            SyncNextGroupId();
+
+            if (Prefs.DevMode)
+            {
+                Log.Message($"[WorkTabGroups] Applied layout draft ({groups.Count} groups).");
             }
         }
 
