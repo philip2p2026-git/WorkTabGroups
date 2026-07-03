@@ -14,7 +14,7 @@ namespace WorkTabGroups.Patches
 
         public static void Postfix()
         {
-            WorkTabGroupsSidecarStorage.Save(WorkTabGroupsManager.Instance);
+            WorkTabGroupsSidecarStorage.Save(WorkTabGroupsManager.EnsureRegistered());
         }
     }
 
@@ -43,37 +43,6 @@ namespace WorkTabGroups.Patches
         public static void Postfix()
         {
             LongEventHandler.ExecuteWhenFinished(WorkTabGroupsSidecarStorage.TryLoadIntoManager);
-        }
-    }
-
-    [HarmonyPatch(typeof(Game), nameof(Game.ExposeData))]
-    public static class Patch_Game_ExposeData
-    {
-        private static WorkTabGroupsManager savingManager;
-
-        public static void Prefix(Game __instance)
-        {
-            if (Scribe.mode != LoadSaveMode.Saving)
-            {
-                return;
-            }
-
-            savingManager = __instance.GetComponent<WorkTabGroupsManager>();
-            if (savingManager != null)
-            {
-                __instance.components.Remove(savingManager);
-            }
-        }
-
-        public static void Postfix(Game __instance)
-        {
-            if (Scribe.mode != LoadSaveMode.Saving || savingManager == null)
-            {
-                return;
-            }
-
-            __instance.components.Add(savingManager);
-            savingManager = null;
         }
     }
 }

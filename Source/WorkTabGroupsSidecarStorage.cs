@@ -8,17 +8,14 @@ namespace WorkTabGroups
     {
         private static string StorageDirectory => Path.Combine(GenFilePaths.SaveDataFolderPath, "WorkTabGroups");
 
+        /// <summary>
+        /// Legacy backup write during transition; primary persistence is WorkTabGroupsManager in the .rws save.
+        /// </summary>
         public static void Save(WorkTabGroupsManager manager)
         {
             string saveName = WorkTabGroupsSaveTracker.CurrentSaveName;
-            if (saveName.NullOrEmpty())
+            if (saveName.NullOrEmpty() || manager == null || manager.Groups.Count == 0)
             {
-                return;
-            }
-
-            if (manager == null || manager.Groups.Count == 0)
-            {
-                DeleteForSave(saveName);
                 return;
             }
 
@@ -39,6 +36,9 @@ namespace WorkTabGroups
             }
         }
 
+        /// <summary>
+        /// Imports legacy sidecar data when the .rws save has no custom groups (one-time migration).
+        /// </summary>
         public static void TryLoadIntoManager()
         {
             string saveName = WorkTabGroupsSaveTracker.CurrentSaveName;
@@ -47,14 +47,13 @@ namespace WorkTabGroups
                 return;
             }
 
-            WorkTabGroupsManager existing = WorkTabGroupsManager.Instance;
-            if (existing != null && existing.Groups.Count > 0)
+            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
+            if (manager == null)
             {
                 return;
             }
 
-            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
-            if (manager == null)
+            if (manager.Groups.Count > 0)
             {
                 return;
             }
@@ -92,12 +91,17 @@ namespace WorkTabGroups
 
             if (data.groups.Count == 0)
             {
-                DeleteForSave(saveName);
                 LongEventHandler.ExecuteWhenFinished(WorkTabGroupsManager.RequestColumnRebuild);
                 return;
             }
 
             manager.ApplyPersistedState(data.groups, data.workLayoutOrder, data.nextGroupId);
+            DeleteForSave(saveName);
+
+            if (Prefs.DevMode)
+            {
+                Log.Message($"[WorkTabGroups] Migrated layout from legacy sidecar ({data.groups.Count} groups).");
+            }
         }
 
         public static void DeleteForCurrentSave()

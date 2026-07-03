@@ -113,6 +113,13 @@ namespace WorkTabGroups
             }
         }
 
+        public void PersistLayoutState()
+        {
+            EnsureRegistered();
+            LayoutSanitizer.PruneInvalidReferences(this);
+            EnsureWorkLayoutOrder();
+        }
+
         public void RebuildRuntimeState()
         {
             LayoutSanitizer.PruneInvalidReferences(this);
@@ -278,6 +285,7 @@ namespace WorkTabGroups
             }
 
             workLayoutOrder.Insert(layoutIndex, WorkLayoutEntry.ForCustomGroup(defName));
+            PersistLayoutState();
             RequestColumnRebuild();
             return null;
         }
@@ -311,6 +319,7 @@ namespace WorkTabGroups
 
             toIndex = UnityEngine.Mathf.Clamp(toIndex, 0, workLayoutOrder.Count);
             workLayoutOrder.Insert(toIndex, entry);
+            PersistLayoutState();
             RequestColumnRelayout();
         }
 
@@ -332,6 +341,7 @@ namespace WorkTabGroups
             string moving = order[fromIndex];
             order.RemoveAt(fromIndex);
             order.Insert(toIndex, moving);
+            PersistLayoutState();
             RequestColumnRelayout();
         }
 
@@ -358,6 +368,7 @@ namespace WorkTabGroups
             group.assignedWorkGiverDefNames.Insert(indexInGroup, workGiver.defName);
             group.expanded = true;
             workGiverToGroup[workGiver] = group;
+            PersistLayoutState();
             RequestColumnRelayout();
         }
 
@@ -399,6 +410,7 @@ namespace WorkTabGroups
             }
 
             group.label = newLabel.Trim();
+            PersistLayoutState();
             RequestColumnRelayout();
             return null;
         }
@@ -416,6 +428,7 @@ namespace WorkTabGroups
                 e.kind == WorkLayoutEntryKind.CustomGroup && e.key == defName);
             RemoveImpliedDefs(group);
             RebuildRuntimeState();
+            PersistLayoutState();
             RequestColumnRebuild();
         }
 
@@ -448,6 +461,7 @@ namespace WorkTabGroups
                     group.expanded = false;
                 }
 
+                PersistLayoutState();
                 RequestColumnRelayout();
             }
         }
@@ -495,6 +509,7 @@ namespace WorkTabGroups
             SyncNextGroupId();
             EnsureWorkLayoutOrder();
             RebuildRuntimeState();
+            PersistLayoutState();
             RequestColumnRebuild();
         }
 
@@ -626,6 +641,7 @@ namespace WorkTabGroups
             ReplaceGroupsFromPreset(clonedGroups, clonedOrder);
             nextGroupId = Math.Max(nextGroupId, draft.NextGroupId);
             SyncNextGroupId();
+            PersistLayoutState();
 
             if (Prefs.DevMode)
             {

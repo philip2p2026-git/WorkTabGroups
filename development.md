@@ -25,7 +25,7 @@ RimWorld mod that extends **Fluffy's Work Tab** with custom collapsible work gro
 | **WorkGiver** (`WorkGiverDef`) | Single job column under a work type (e.g. `DoBillsCook`). Can be moved into a custom group via the layout editor. |
 | **Custom group** (`MajorWorkGroupData`) | Player-defined bucket with its own column header and assigned WorkGivers. Draggable among work types in the layout editor. |
 | **Layout order** (`workLayoutOrder`) | Per-colony ordered list of `WorkLayoutEntry` items (`WorkType` or `CustomGroup`). Drives Work Tab column injection. |
-| **Sidecar** | Per-save XML at `SaveData/WorkTabGroups/{saveName}.xml` — groups + layout order, separate from the main `.rws`. |
+| **Sidecar** | Legacy per-save XML at `SaveData/WorkTabGroups/{saveName}.xml` — used only for one-time migration into `.rws`. |
 | **Layout preset** | Global mod-settings snapshot of full layout (order + groups + WorkGiver assignments). |
 | **Group preset** | Global mod-settings snapshot of one group's label and WorkGiver list. |
 | **Anchor** (`insertAfterAnchor`) | **Legacy** position field (`WorkType:Firefight`, or empty = start). Used only to migrate old saves/presets into `workLayoutOrder`. No longer written. |
@@ -106,30 +106,33 @@ Singleton via `Instance` / `EnsureRegistered()`.
 | `MoveWorkGiverWithinGroup` | Reorder `assignedWorkGiverDefNames` |
 | `ReplaceGroupsFromPreset(groups, layoutOrder)` | Apply layout preset |
 | `CaptureLayoutPreset` / `CaptureGroupPreset` | Serialize to mod settings |
+| `PersistLayoutState()` | Ensure `GameComponent` registration, sanitize, sync layout order (called after Apply and mutations) |
 | `PrepareForModRemoval()` | Unassign all WorkGivers, clear groups, rebuild vanilla columns, delete sidecar, remove component |
 
 ### Persistence
 
 | Store | Location | Contents |
 |-------|----------|----------|
-| **Sidecar** | `SaveData/WorkTabGroups/{save}.xml` | `groups`, `workLayoutOrder`, `nextGroupId` |
+| **Game component (authoritative)** | `WorkTabGroupsManager` in colony `.rws` via `ExposeData` | `groups` (incl. `assignedWorkGiverDefNames`), `workLayoutOrder`, `nextGroupId` |
+| **Sidecar (legacy migration)** | `SaveData/WorkTabGroups/{save}.xml` | Same fields; imported once when `.rws` has no groups, then deleted |
 | **Mod settings** | RimWorld mod options XML | `layoutPresets`, `groupPresets`, `defaultLayoutPresetName` |
-| **Game component** | `WorkTabGroupsManager.ExposeData` | Same fields (sidecar is authoritative on load) |
 
-On save, `Patch_Game_ExposeData` strips the manager from the main save XML; `WorkTabGroupsSidecarStorage` writes the sidecar.
+On save, `WorkTabGroupsManager` serializes into the main `.rws` save. `WorkTabGroupsSidecarStorage.Save` also writes a legacy sidecar backup when groups exist.
 
-On load, if the in-memory manager has no groups, the sidecar is applied via `ApplyPersistedState` (after `LayoutSanitizer.PruneLayoutData` on deserialized sidecar data).
+On load, `WorkTabGroupsManager.ExposeData` (`PostLoadInit`) restores layout from `.rws`. If the manager has no groups but a legacy sidecar exists, `TryLoadIntoManager` imports it via `ApplyPersistedState` (after `LayoutSanitizer.PruneLayoutData`), then deletes the sidecar.
+
+Layout mutations and layout-editor **Apply** call `PersistLayoutState()` so the `GameComponent` is always registered and sanitized before the next colony save.
 
 ### Mod-removal resilience
 
 | Concern | Handling |
 |---------|----------|
-| **Other mod removes WorkGivers** | `Patch_WorkPriority_ExposeData` silently skips missing defs in Work Tab pawn priority XML. `LayoutSanitizer` prunes missing/invalid WorkGivers from custom groups and removes empty groups. |
+| **Other mod removes WorkGivers** | `Patch_WorkPriority_ExposeData` silently skips missing defs in Work Tab pawn priority XML. `LayoutSanitizer` prunes missing/invalid WorkGivers from custom groups individually; groups remain. |
 | **Other mod removes WorkTypes** | `LayoutSanitizer` + `LayoutOrderUtility.SyncWorkTypesInLayoutOrder` drop missing work types from `workLayoutOrder`. |
-| **Disabling Work Tab Groups** | Layout lives in sidecar (not `.rws`); implied group columns are runtime-only. `PrepareForModRemoval()` unassigns WorkGivers, restores vanilla column layout, deletes sidecar. Loading without Prepare is usually safe; Prepare + save is recommended. |
-| **Invalid WorkGiver mapping** | `LayoutSanitizer` removes assigned names when the def, its `workType`, or the `WorkTypeDef` is missing. |
+| **Disabling Work Tab Groups** | Layout lives in `.rws` as a `GameComponent`. `PrepareForModRemoval()` unassigns WorkGivers, restores vanilla column layout, deletes sidecar, removes component. Run Prepare + save before disabling the mod. |
+| **Invalid WorkGiver mapping** | `LayoutSanitizer` removes assigned names when the def, its `workType`, or the `WorkTypeDef` is missing; other assignments in the group are kept. |
 
-`LayoutSanitizer` runs in `RebuildRuntimeState`, before column injection, on sidecar load, and in `PrepareForModRemoval`.
+`LayoutSanitizer` runs in `RebuildRuntimeState`, `PersistLayoutState`, before column injection, on legacy sidecar load, and in `PrepareForModRemoval`.
 
 ### Migration
 
@@ -238,8 +241,7 @@ Harmony id: `philip2p2026.worktabgroups`.
 | `Patch_WorkTab_Expand` | `MainTabWindow_WorkTab.Expand` | Allow collapse when `CanExpand` is false |
 | `Patch_PriorityTracker_*` | `PriorityTracker` WorkType scope | WorkType bulk priority skips WorkGivers in custom groups |
 | `Patch_WorkPriority_ExposeData` | `WorkPriority.ExposeData` | Load WorkGiver def names via `GetNamedSilentFail` (no error spam when other mods removed) |
-| `Patch_Game_*` / `Patch_GameDataSaveLoader_*` | Game lifecycle, save/load | Component registration, sidecar I/O, strip manager from main save |
-| `Patch_Game_ExposeData` | `Game.ExposeData` | Sidecar persistence hook |
+| `Patch_Game_*` / `Patch_GameDataSaveLoader_*` | Game lifecycle, save/load | Component registration, legacy sidecar migration I/O |
 
 ---
 
@@ -279,5 +281,5 @@ Colony-specific editing is done in-game via the layout editor, not mod settings.
 1. **Layout changes** must update `workLayoutOrder` and call `RequestColumnRelayout` / `RequestColumnRebuild`.
 2. **New WorkTypes from other mods** are merged by `LayoutOrderUtility.SyncWorkTypesInLayoutOrder` — verify column builder still finds the WorkType column def.
 3. **Do not reintroduce Work Tab layout interactions** (right-click assign, header reorder) unless explicitly requested — configuration belongs in `Window_WorkLayoutEditor`.
-4. **Preserve sidecar migration** when touching `MajorWorkGroupData` or preset formats.
+4. **Preserve legacy sidecar migration** when touching `MajorWorkGroupData` or preset formats.
 5. **Player-facing copy:** use **work type** and **custom group**; avoid ambiguous “group” when meaning `WorkTypeDef`.
