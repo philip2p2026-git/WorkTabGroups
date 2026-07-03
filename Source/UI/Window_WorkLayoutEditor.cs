@@ -25,7 +25,7 @@ namespace WorkTabGroups
 
         public Window_WorkLayoutEditor()
         {
-            doCloseButton = true;
+            doCloseButton = false;
             doCloseX = true;
             forcePause = false;
             absorbInputAroundWindow = false;
@@ -75,11 +75,11 @@ namespace WorkTabGroups
 
             if (Widgets.ButtonText(new Rect(x, y, buttonWidth, 28f), "WorkTabGroups.LayoutEditor.AddGroup".Translate()))
             {
-                Find.WindowStack.Add(new Dialog_AddMajorWorkGroup(GetInsertIndexForNewGroup(manager)));
+                Find.WindowStack.Add(new Dialog_AddMajorWorkGroup(GetInsertIndexForNewGroup()));
             }
 
             x += buttonWidth + 4f;
-            if (Widgets.ButtonText(new Rect(x, y, buttonWidth, 28f), "WorkTabGroups.SaveLayoutPreset".Translate()))
+            if (Widgets.ButtonText(new Rect(x, y, buttonWidth, 28f), "WorkTabGroups.Save".Translate()))
             {
                 Find.WindowStack.Add(new Dialog_SaveLayoutPreset());
             }
@@ -91,23 +91,9 @@ namespace WorkTabGroups
             }
         }
 
-        private int GetInsertIndexForNewGroup(WorkTabGroupsManager manager)
+        private static int GetInsertIndexForNewGroup()
         {
-            int insertIndex = manager.WorkLayoutOrder.Count;
-            if (!selectedGroupDefName.NullOrEmpty())
-            {
-                for (int i = 0; i < manager.WorkLayoutOrder.Count; i++)
-                {
-                    if (manager.WorkLayoutOrder[i].kind == WorkLayoutEntryKind.CustomGroup &&
-                        manager.WorkLayoutOrder[i].key == selectedGroupDefName)
-                    {
-                        insertIndex = i + 1;
-                        break;
-                    }
-                }
-            }
-
-            return insertIndex;
+            return 0;
         }
 
         private void OpenLoadPresetMenu()

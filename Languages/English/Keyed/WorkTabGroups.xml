@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+	<WorkTabGroups.LayoutEditor.OpenButton>Customize Group</WorkTabGroups.LayoutEditor.OpenButton>
 	<WorkTabGroups.LayoutEditor.OpenTip>Open work layout editor</WorkTabGroups.LayoutEditor.OpenTip>
 	<WorkTabGroups.LayoutEditor.Title>Work layout editor</WorkTabGroups.LayoutEditor.Title>
 	<WorkTabGroups.LayoutEditor.AddGroup>Add group</WorkTabGroups.LayoutEditor.AddGroup>
@@ -42,7 +43,7 @@
 	<WorkTabGroups.Error.GroupNotFound>Group not found.</WorkTabGroups.Error.GroupNotFound>
 	<WorkTabGroups.Error.DuplicatePresetName>A preset named "{0}" already exists.</WorkTabGroups.Error.DuplicatePresetName>
 
-	<WorkTabGroups.Settings.LayoutEditorTip>Edit colony work layout from the Work tab using the L button, or from this mod's layout window.</WorkTabGroups.Settings.LayoutEditorTip>
+	<WorkTabGroups.Settings.LayoutEditorTip>Edit colony work layout from the Work tab using the Customize Group button, or from this mod's layout window.</WorkTabGroups.Settings.LayoutEditorTip>
 	<WorkTabGroups.Settings.PresetsHeader>Global presets</WorkTabGroups.Settings.PresetsHeader>
 	<WorkTabGroups.Settings.GroupPresetsHeader>Saved group presets</WorkTabGroups.Settings.GroupPresetsHeader>
 	<WorkTabGroups.Settings.DefaultLayout>Default layout for new colonies</WorkTabGroups.Settings.DefaultLayout>
