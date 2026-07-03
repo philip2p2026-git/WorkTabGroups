@@ -25,14 +25,13 @@ namespace WorkTabGroups
             }
 
             int prunedWorkGivers = PruneInvalidWorkGivers(groups);
-            int prunedEmptyGroups = PruneEmptyGroups(groups, layoutOrder);
             int prunedLayoutEntries = PruneInvalidLayoutEntries(layoutOrder, defName => FindGroup(groups, defName));
 
-            if (Prefs.DevMode && (prunedWorkGivers > 0 || prunedEmptyGroups > 0 || prunedLayoutEntries > 0))
+            if (Prefs.DevMode && (prunedWorkGivers > 0 || prunedLayoutEntries > 0))
             {
                 Log.Message(
                     $"[WorkTabGroups] Pruned invalid references: {prunedWorkGivers} WorkGiver(s), " +
-                    $"{prunedEmptyGroups} empty group(s), {prunedLayoutEntries} layout entry(ies).");
+                    $"{prunedLayoutEntries} layout entry(ies).");
             }
         }
 
@@ -101,38 +100,6 @@ namespace WorkTabGroups
             }
 
             return pruned;
-        }
-
-        private static int PruneEmptyGroups(List<MajorWorkGroupData> groups, List<WorkLayoutEntry> layoutOrder)
-        {
-            if (groups == null || groups.Count == 0)
-            {
-                return 0;
-            }
-
-            var emptyDefNames = new HashSet<string>();
-            foreach (MajorWorkGroupData group in groups)
-            {
-                if (group?.assignedWorkGiverDefNames == null || group.assignedWorkGiverDefNames.Count == 0)
-                {
-                    emptyDefNames.Add(group.defName);
-                }
-            }
-
-            if (emptyDefNames.Count == 0)
-            {
-                return 0;
-            }
-
-            groups.RemoveAll(g => g != null && emptyDefNames.Contains(g.defName));
-
-            if (layoutOrder != null)
-            {
-                layoutOrder.RemoveAll(e =>
-                    e.kind == WorkLayoutEntryKind.CustomGroup && emptyDefNames.Contains(e.key));
-            }
-
-            return emptyDefNames.Count;
         }
 
         private static int PruneInvalidLayoutEntries(

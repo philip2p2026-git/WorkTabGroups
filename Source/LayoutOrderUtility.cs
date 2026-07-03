@@ -97,7 +97,10 @@ namespace WorkTabGroups
                 c.workerClass == typeof(PawnColumnWorker_WorkType));
         }
 
-        public static void SyncWorkTypesInLayoutOrder(List<WorkLayoutEntry> layoutOrder, List<string> nativeWorkTypeOrder)
+        public static void SyncWorkTypesInLayoutOrder(
+            List<WorkLayoutEntry> layoutOrder,
+            List<string> nativeWorkTypeOrder,
+            WorkTabGroupsManager manager = null)
         {
             if (layoutOrder == null)
             {
@@ -114,7 +117,7 @@ namespace WorkTabGroups
             }
 
             var groupDefNames = new HashSet<string>(
-                WorkTabGroupsManager.Instance?.Groups.Select(g => g.defName) ?? Enumerable.Empty<string>());
+                manager?.Groups.Select(g => g.defName) ?? Enumerable.Empty<string>());
             layoutOrder.RemoveAll(e =>
                 e.kind == WorkLayoutEntryKind.CustomGroup &&
                 !groupDefNames.Contains(e.key));

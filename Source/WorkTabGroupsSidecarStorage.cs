@@ -53,9 +53,16 @@ namespace WorkTabGroups
                 return;
             }
 
+            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
+            if (manager == null)
+            {
+                return;
+            }
+
             string path = GetPath(saveName);
             if (!File.Exists(path))
             {
+                LongEventHandler.ExecuteWhenFinished(WorkTabGroupsManager.RequestColumnRebuild);
                 return;
             }
 
@@ -72,6 +79,7 @@ namespace WorkTabGroups
 
             if (data?.groups == null || data.groups.Count == 0)
             {
+                LongEventHandler.ExecuteWhenFinished(WorkTabGroupsManager.RequestColumnRebuild);
                 return;
             }
 
@@ -85,10 +93,10 @@ namespace WorkTabGroups
             if (data.groups.Count == 0)
             {
                 DeleteForSave(saveName);
+                LongEventHandler.ExecuteWhenFinished(WorkTabGroupsManager.RequestColumnRebuild);
                 return;
             }
 
-            WorkTabGroupsManager manager = WorkTabGroupsManager.EnsureRegistered();
             manager.ApplyPersistedState(data.groups, data.workLayoutOrder, data.nextGroupId);
         }
 

@@ -16,9 +16,22 @@ namespace WorkTabGroups.Patches
         public static void Prefix(List<PawnColumnDef> workTableColumns, ref List<PawnColumnDef> __state)
         {
             __state = new List<PawnColumnDef>();
+            WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
             foreach (PawnColumnDef col in workTableColumns)
             {
-                if (col.workerClass == typeof(PawnColumnWorker_MajorWorkGroup))
+                if (col.workerClass != typeof(PawnColumnWorker_MajorWorkGroup))
+                {
+                    continue;
+                }
+
+                if (manager == null)
+                {
+                    continue;
+                }
+
+                if (col is PawnColumnDef_MajorWorkGroup majorCol &&
+                    majorCol.majorWorkGroup?.data != null &&
+                    manager.GetGroup(majorCol.majorWorkGroup.data.defName) != null)
                 {
                     __state.Add(col);
                 }

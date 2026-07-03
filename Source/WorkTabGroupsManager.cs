@@ -196,7 +196,7 @@ namespace WorkTabGroups
             }
             else
             {
-                LayoutOrderUtility.SyncWorkTypesInLayoutOrder(workLayoutOrder, nativeOrder);
+                LayoutOrderUtility.SyncWorkTypesInLayoutOrder(workLayoutOrder, nativeOrder, this);
             }
         }
 
