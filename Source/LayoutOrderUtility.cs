@@ -12,17 +12,30 @@ namespace WorkTabGroups
         {
             var result = new List<string>();
             List<PawnColumnDef> columns = PawnTableDefOf.Work?.columns;
-            if (columns == null)
+            if (columns != null)
             {
-                return result;
+                foreach (PawnColumnDef col in columns)
+                {
+                    if (col.workType != null && col.Worker is PawnColumnWorker_WorkType &&
+                        WorkTypeDefExists(col.workType.defName) &&
+                        !result.Contains(col.workType.defName))
+                    {
+                        result.Add(col.workType.defName);
+                    }
+                }
             }
 
-            foreach (PawnColumnDef col in columns)
+            if (result.Count == 0)
             {
-                if (col.workType != null && col.Worker is PawnColumnWorker_WorkType &&
-                    !result.Contains(col.workType.defName))
+                foreach (PawnColumnDef col in DefDatabase<PawnColumnDef>.AllDefsListForReading
+                    .Where(c => c.workType != null && c.workerClass == typeof(PawnColumnWorker_WorkType))
+                    .OrderByDescending(c => c.workType.naturalPriority))
                 {
-                    result.Add(col.workType.defName);
+                    if (WorkTypeDefExists(col.workType.defName) &&
+                        !result.Contains(col.workType.defName))
+                    {
+                        result.Add(col.workType.defName);
+                    }
                 }
             }
 
@@ -34,7 +47,10 @@ namespace WorkTabGroups
             var order = new List<WorkLayoutEntry>();
             foreach (string workTypeName in workTypeOrder ?? GetNativeWorkTypeOrder())
             {
-                order.Add(WorkLayoutEntry.ForWorkType(workTypeName));
+                if (WorkTypeDefExists(workTypeName))
+                {
+                    order.Add(WorkLayoutEntry.ForWorkType(workTypeName));
+                }
             }
 
             return order;
@@ -76,7 +92,9 @@ namespace WorkTabGroups
                 }
             }
 
-            return null;
+            return DefDatabase<PawnColumnDef>.AllDefsListForReading.FirstOrDefault(c =>
+                c.workType?.defName == workTypeDefName &&
+                c.workerClass == typeof(PawnColumnWorker_WorkType));
         }
 
         public static void SyncWorkTypesInLayoutOrder(List<WorkLayoutEntry> layoutOrder, List<string> nativeWorkTypeOrder)
@@ -86,11 +104,14 @@ namespace WorkTabGroups
                 return;
             }
 
-            nativeWorkTypeOrder ??= GetNativeWorkTypeOrder();
+            nativeWorkTypeOrder = FilterExistingWorkTypes(nativeWorkTypeOrder ?? GetNativeWorkTypeOrder());
 
-            layoutOrder.RemoveAll(e =>
-                e.kind == WorkLayoutEntryKind.WorkType &&
-                !nativeWorkTypeOrder.Contains(e.key));
+            if (nativeWorkTypeOrder.Count > 0)
+            {
+                layoutOrder.RemoveAll(e =>
+                    e.kind == WorkLayoutEntryKind.WorkType &&
+                    (!WorkTypeDefExists(e.key) || !nativeWorkTypeOrder.Contains(e.key)));
+            }
 
             var groupDefNames = new HashSet<string>(
                 WorkTabGroupsManager.Instance?.Groups.Select(g => g.defName) ?? Enumerable.Empty<string>());
@@ -129,6 +150,31 @@ namespace WorkTabGroups
 
                 layoutOrder.Insert(insertIndex, WorkLayoutEntry.ForWorkType(workTypeName));
             }
+        }
+
+        private static bool WorkTypeDefExists(string workTypeDefName)
+        {
+            return !workTypeDefName.NullOrEmpty() &&
+                   DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName) != null;
+        }
+
+        private static List<string> FilterExistingWorkTypes(List<string> workTypeNames)
+        {
+            var result = new List<string>();
+            if (workTypeNames == null)
+            {
+                return result;
+            }
+
+            foreach (string workTypeName in workTypeNames)
+            {
+                if (WorkTypeDefExists(workTypeName) && !result.Contains(workTypeName))
+                {
+                    result.Add(workTypeName);
+                }
+            }
+
+            return result;
         }
     }
 }

@@ -11,6 +11,11 @@ namespace WorkTabGroups.Patches
     {
         public static bool Prefix(IExpandableColumn expandableColumn, bool expand)
         {
+            if (expandableColumn == null)
+            {
+                return true;
+            }
+
             if (!expand && expandableColumn.Expanded)
             {
                 expandableColumn.Expanded = false;

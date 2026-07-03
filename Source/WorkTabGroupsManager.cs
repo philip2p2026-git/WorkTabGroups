@@ -59,6 +59,8 @@ namespace WorkTabGroups
 
         public IReadOnlyList<WorkLayoutEntry> WorkLayoutOrder => workLayoutOrder;
 
+        internal List<WorkLayoutEntry> WorkLayoutOrderMutable => workLayoutOrder;
+
         public WorkTabGroupsManager(Game game)
         {
             instance = this;
@@ -109,6 +111,7 @@ namespace WorkTabGroups
 
         public void RebuildRuntimeState()
         {
+            LayoutSanitizer.PruneInvalidReferences(this);
             groupDefByName.Clear();
             columnDefByGroupName.Clear();
             workGiverToGroup.Clear();
@@ -171,6 +174,11 @@ namespace WorkTabGroups
 
         public PawnColumnDef GetWorkGiverColumn(WorkGiverDef workGiver)
         {
+            if (workGiver == null)
+            {
+                return null;
+            }
+
             string colName = "WorkPriority_WorkGiver_" + workGiver.defName;
             return DefDatabase<PawnColumnDef>.GetNamedSilentFail(colName);
         }
@@ -224,6 +232,7 @@ namespace WorkTabGroups
         }
         public void PrepareForModRemoval()
         {
+            LayoutSanitizer.PruneInvalidReferences(this);
             ClearAllGroups();
             WorkTabGroupsSidecarStorage.DeleteForCurrentSave();
 

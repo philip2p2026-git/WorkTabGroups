@@ -14,7 +14,8 @@ namespace WorkTabGroups.Patches
         public static void Postfix(PriorityTracker __instance, WorkTypeDef workType, int hour, ref int __result)
         {
             WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
-            if (manager == null || workType == null || !__instance.Pawn.AllowedToDo(workType))
+            if (manager == null || workType == null || workType.workGiversByPriority == null ||
+                !__instance.Pawn.AllowedToDo(workType))
             {
                 return;
             }
@@ -46,7 +47,7 @@ namespace WorkTabGroups.Patches
         public static bool Prefix(PriorityTracker __instance, WorkTypeDef worktype, int priority, int hour, bool recache)
         {
             WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
-            if (manager == null || worktype == null)
+            if (manager == null || worktype == null || worktype.workGiversByPriority == null)
             {
                 return true;
             }
@@ -82,7 +83,7 @@ namespace WorkTabGroups.Patches
         public static bool Prefix(PriorityTracker __instance, WorkTypeDef worktype, int priority, System.Collections.Generic.List<int> hours)
         {
             WorkTabGroupsManager manager = WorkTabGroupsManager.Instance;
-            if (manager == null || worktype == null)
+            if (manager == null || worktype == null || worktype.workGiversByPriority == null)
             {
                 return true;
             }

@@ -9,7 +9,8 @@ namespace WorkTabGroups.Patches
         public static bool Prefix(PawnColumnWorker_WorkGiver __instance, ref bool __result)
         {
             if (__instance.WorkGiver != null &&
-                WorkGiverGroupLinks.MajorGroupByWorkGiver.TryGetValue(__instance.WorkGiver, out PawnColumnWorker_MajorWorkGroup groupWorker))
+                WorkGiverGroupLinks.MajorGroupByWorkGiver.TryGetValue(__instance.WorkGiver, out PawnColumnWorker_MajorWorkGroup groupWorker) &&
+                groupWorker != null)
             {
                 __result = groupWorker.Expanded;
                 return false;

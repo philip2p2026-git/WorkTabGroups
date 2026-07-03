@@ -50,8 +50,8 @@
 	<WorkTabGroups.Settings.None>None</WorkTabGroups.Settings.None>
 
 	<WorkTabGroups.Settings.ModRemovalHeader>Removing this mod</WorkTabGroups.Settings.ModRemovalHeader>
-	<WorkTabGroups.Settings.ModRemovalTip>Group data is stored outside the colony save. After updating, load each colony once with this mod enabled and save it to migrate old saves. You can then disable the mod without load errors.</WorkTabGroups.Settings.ModRemovalTip>
+	<WorkTabGroups.Settings.ModRemovalTip>Group data is stored outside the colony save. Use Prepare save for mod removal, then save the colony before disabling this mod — loading without that step can break saves that still reference this mod. After updating, load each colony once with this mod enabled and save to migrate old saves.</WorkTabGroups.Settings.ModRemovalTip>
 	<WorkTabGroups.Settings.PrepareForModRemoval>Prepare save for mod removal</WorkTabGroups.Settings.PrepareForModRemoval>
-	<WorkTabGroups.ConfirmPrepareForModRemoval>Clear all custom work groups and remove Work Tab Groups data from this save? Save the game afterward, then you can disable the mod.</WorkTabGroups.ConfirmPrepareForModRemoval>
-	<WorkTabGroups.PreparedForModRemoval>Work Tab Groups data removed from this colony. Save the game, then you can disable the mod.</WorkTabGroups.PreparedForModRemoval>
+	<WorkTabGroups.ConfirmPrepareForModRemoval>Clear all custom work groups and remove Work Tab Groups data from this save? You must save the game afterward before disabling the mod.</WorkTabGroups.ConfirmPrepareForModRemoval>
+	<WorkTabGroups.PreparedForModRemoval>Work Tab Groups data removed from this colony. Save the game now, then you can disable the mod.</WorkTabGroups.PreparedForModRemoval>
 </LanguageData>

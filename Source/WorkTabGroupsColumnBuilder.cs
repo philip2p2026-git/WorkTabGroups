@@ -26,6 +26,9 @@ namespace WorkTabGroups
                 return;
             }
 
+            manager.EnsureWorkLayoutOrder();
+            LayoutSanitizer.PruneInvalidReferences(manager);
+
             List<PawnColumnDef> columns = PawnTableDefOf.Work.columns;
             if (columns == null || columns.Count == 0)
             {
@@ -51,6 +54,16 @@ namespace WorkTabGroups
             }
 
             List<PawnColumnDef> newColumns = BuildColumnsFromLayoutOrder(columns, manager, reassignedColumns);
+
+            if (!HasWorkColumns(newColumns))
+            {
+                if (Prefs.DevMode)
+                {
+                    Log.Warning("[WorkTabGroups] Inject skipped: no work columns in rebuilt layout.");
+                }
+
+                return;
+            }
 
             WireGroupedWorkGiverLinks(manager);
             UpdateNativeWorkTypeExpandState(newColumns);
@@ -328,6 +341,7 @@ namespace WorkTabGroups
                     {
                         if (columns[j].Worker is PawnColumnWorker_WorkGiver wgWorker &&
                             columns[j] is PawnColumnDef_WorkGiver wgDef &&
+                            wgDef.workgiver != null &&
                             (manager == null || !manager.IsAssignedToCustomGroup(wgDef.workgiver)))
                         {
                             wgWorker.ColumnWorkerWorkType = workTypeWorker;
@@ -356,6 +370,26 @@ namespace WorkTabGroups
                     wgWorker.InvalidateCache();
                 }
             }
+        }
+
+        private static bool HasWorkColumns(List<PawnColumnDef> columns)
+        {
+            if (columns == null)
+            {
+                return false;
+            }
+
+            foreach (PawnColumnDef col in columns)
+            {
+                if (col.Worker is PawnColumnWorker_WorkType ||
+                    col.Worker is PawnColumnWorker_WorkGiver ||
+                    col.Worker is PawnColumnWorker_MajorWorkGroup)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
